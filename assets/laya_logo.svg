@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="LayaMed">
+  <defs>
+    <linearGradient id="lm-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2E9461"/>
+      <stop offset="1" stop-color="#1F6E9C"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#lm-grad)"/>
+  <!-- vital-sign trace ending in a dot: the case being read until the decision -->
+  <polyline points="11,36 21,36 26,24 32,46 37,29 41,36 47,36" fill="none" stroke="#FFFFFF" stroke-width="4.2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="52" cy="36" r="4.2" fill="#FFFFFF"/>
+</svg>

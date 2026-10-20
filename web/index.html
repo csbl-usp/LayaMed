@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LayaMed · live diagnosis</title>
+<!-- Embedded icon and logo (same drawing as assets/laya_logo.svg): they show even when the file is opened from disk -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232E9461'/%3E%3Cstop offset='1' stop-color='%231F6E9C'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='60' height='60' rx='16' fill='url(%23g)'/%3E%3Cpolyline points='11,36 21,36 26,24 32,46 37,29 41,36 47,36' fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='52' cy='36' r='4.2' fill='%23fff'/%3E%3C/svg%3E">
+<!-- Page served by the local server (server.py) at http://127.0.0.1:8000 (or http://<server IP>:8000 from another
+     computer on the network, with server.py --lan; the /api calls are relative). Opened directly from disk, it redirects
+     to the server if it is running, or explains how to start it. Nothing is loaded from the internet. -->
+<style>
+  :root {
+    --blue: #1F6E9C; --green: #2E9461; --ink: #1F2D2A; --ink-soft: #5B6B66;
+    --green-light: #E9F1EA; --blue-light: #EEF4FA; --border: #D6E2DB; --field-bg: #FBFDFC;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #FFFFFF; color: var(--ink);
+         font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
+  .page { max-width: 1240px; margin: 0 auto; padding: 0 24px 40px; }
+
+  /* Header with the logo only, centered */
+  header { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 22px 0 18px; }
+  header svg { width: 64px; height: 64px; flex-shrink: 0; }
+  .server-notice { border: 1px solid #F0D9B5; background: #FFF9EF; border-radius: 12px; padding: 14px 18px;
+                   margin: 0 auto 18px; max-width: 760px; font-size: 15px; line-height: 1.5; }
+  .server-notice code { background: #FFFFFF; border: 1px solid #F0D9B5; border-radius: 6px; padding: 1px 6px; }
+  .server-notice a { color: var(--blue); font-weight: 600; }
+  .main[hidden], .server-notice[hidden] { display: none; }
+  .brand { font-size: 38px; font-weight: 700; letter-spacing: -0.5px; color: var(--blue); }
+  .brand span { color: var(--green); }
+
+  /* Text field on the left; chart and card fixed on the right */
+  .main { display: grid; grid-template-columns: minmax(300px, 5fr) minmax(300px, 4fr); gap: 20px; align-items: start; }
+  .right { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto;
+           display: flex; flex-direction: column; gap: 14px; }
+
+  .block { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: #FFFFFF; }
+  .block + .block { margin-top: 14px; }
+  .block-label { display: inline-block; font-size: 13px; font-weight: 600; color: var(--green);
+                 background: var(--green-light); border-radius: 8px; padding: 3px 9px; margin-bottom: 10px; }
+  textarea { width: 100%; resize: vertical; border: 1px solid var(--border); border-radius: 10px;
+             background: var(--field-bg); padding: 10px 12px; font: inherit; font-size: 15px; line-height: 1.5;
+             color: var(--ink); }
+  textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(31, 110, 156, 0.15); }
+  textarea::placeholder { color: #9AA8A3; }
+  .hint { font-size: 13px; color: var(--ink-soft); line-height: 1.45; margin-top: 8px; }
+  .hint b { color: var(--ink); font-weight: 600; }
+  #sections-read { display: block; margin-top: 4px; color: var(--green); }
+
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; }
+  .examples button { border: 1px solid var(--border); background: var(--green-light); color: var(--ink);
+                     border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 14px; cursor: pointer; }
+  .examples button:hover { background: #D7EADD; }
+  .examples button.clear { background: #FFFFFF; }
+  .examples button.typing { background: var(--green); border-color: var(--green); color: #FFFFFF; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); }
+  details pre { white-space: pre-wrap; font-size: 13px; background: var(--field-bg); border-radius: 10px;
+                padding: 10px 12px; margin: 10px 0 0; max-height: 320px; overflow: auto; }
+
+  /* Evidence bars */
+  .bars { display: grid; grid-template-columns: 112px 1fr 58px; row-gap: 14px; column-gap: 10px;
+          align-items: center; margin-top: 6px; }
+  .bars .name { font-size: 15px; text-align: right; }
+  .bars .track { height: 22px; border-radius: 6px; background: transparent; position: relative;
+                 background-image: repeating-linear-gradient(90deg, #E6EEEA 0 1px, transparent 1px 25%); }
+  .bars .bar { height: 100%; width: 0; border-radius: 6px; transition: width .35s ease, background-color .35s; }
+  .bars .value { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .bars .leader { font-weight: 700; }
+  .axis { display: grid; grid-template-columns: 112px 1fr 58px; column-gap: 10px; margin-top: 6px;
+          font-size: 12px; color: var(--ink-soft); }
+  .axis div:nth-child(2) { display: flex; justify-content: space-between; }
+
+  /* Result card */
+  .card { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+  .card.result { border-left: 5px solid var(--green); }
+  .card.out { border-left: 5px solid #C9A227; }
+  .card.out .kicker { color: #8A6D12; }
+  .card p { color: var(--ink-soft); font-size: 14px; line-height: 1.45; margin: 10px 0 0; }
+  .kicker { font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--green); font-weight: 600; }
+  .big { font-size: 30px; font-weight: 700; margin-top: 2px; }
+  .big span { font-size: 15px; font-weight: 500; color: var(--ink-soft); }
+  .leader-name { font-size: 26px; font-weight: 700; margin-top: 2px; display: flex; align-items: baseline; gap: 12px; }
+  .leader-name span { color: var(--green); }
+  .sub { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+  .progress { height: 6px; border-radius: 6px; background: var(--blue-light); margin: 6px 0; overflow: hidden; }
+  .progress div { height: 100%; border-radius: 6px; background: var(--green); transition: width .35s ease; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+  td { padding: 5px 0; border-bottom: 1px solid #EEF3F0; vertical-align: top; }
+  td:first-child { color: var(--ink-soft); width: 42%; padding-right: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--green-light); color: var(--green); }
+  .alert { color: #8A4B12 !important; }
+  .warnings { border: 1px solid #F0D9B5; background: #FFF9EF; border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+  .warnings h4 { margin: 0 0 6px; font-size: 14px; }
+  .warnings ul { margin: 0; padding-left: 18px; }
+  .warnings[hidden] { display: none; }
+  .error { color: #A33A2B; }
+  /* Only on very narrow screens (phones) the chart moves below the text field */
+  @media (max-width: 760px) {
+    .main { grid-template-columns: 1fr; }
+    .right { position: static; max-height: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+      <defs>
+        <linearGradient id="lm-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#2E9461"/><stop offset="1" stop-color="#1F6E9C"/>
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#lm-grad)"/>
+      <polyline points="11,36 21,36 26,24 32,46 37,29 41,36 47,36" fill="none" stroke="#FFFFFF" stroke-width="4.2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="52" cy="36" r="4.2" fill="#FFFFFF"/>
+    </svg>
+    <div class="brand">Laya<span>Med</span></div>
+  </header>
+  <div class="server-notice" id="server-notice" hidden></div>
+
+  <main class="main">
+    <section>
+      <div class="block">
+        <label class="block-label" for="case">Clinical case</label>
+        <textarea id="case" rows="22" maxlength="60000" aria-describedby="case-hint" placeholder="History of present illness:
+Patient presents with...
+
+Physical examination:
+T 38.0 C. Abdomen...
+
+Labs:
+White Blood Cells: 14.0 K/uL, Lipase: 30.0 IU/L, ..."></textarea>
+        <div class="hint" id="case-hint">Start a line with <b>Physical examination:</b> (or <b>Exam:</b>) and
+          <b>Labs:</b> to separate the sections, as in training. Without titles, everything is read as history.
+          <span id="sections-read"></span></div>
+      </div>
+      <div class="block">
+        <div class="block-label">Example cases (hand-written, fictional)</div>
+        <div class="examples" id="examples"></div>
+      </div>
+      <div class="block">
+        <details>
+          <summary>Text Laya receives (after cleaning)</summary>
+          <pre id="model-text"></pre>
+        </details>
+      </div>
+    </section>
+
+    <aside class="right">
+      <div class="block">
+        <div class="block-label">Diagnostic evidence</div>
+        <div class="bars" id="bars"></div>
+        <div class="axis"><div></div><div><span>0%</span><span>50%</span><span>100%</span></div><div></div></div>
+      </div>
+      <div class="card" id="card" aria-live="polite"></div>
+      <div class="warnings" id="warnings" hidden></div>
+    </aside>
+  </main>
+</div>
+
+<script>
+// Bar color gradient by value: light blue → blue → green
+const GRADIENT = [[0.0, [0xD4, 0xE7, 0xF4]], [0.35, [0x5F, 0xA3, 0xD3]], [0.7, [0x1F, 0x6E, 0x9C]], [1.0, [0x1F, 0x7F, 0x50]]];
+const field = document.getElementById("case");
+let CONFIG = null, request = 0, timer = null;
+
+const pct = (p, digits = 1) => (p * 100).toFixed(digits) + "%";
+
+function color(v) {
+  for (let i = 1; i < GRADIENT.length; i++) {
+    const [x1, c1] = GRADIENT[i - 1], [x2, c2] = GRADIENT[i];
+    if (v <= x2) {
+      const t = (v - x1) / (x2 - x1);
+      return `rgb(${c1.map((c, k) => Math.round(c + t * (c2[k] - c))).join(",")})`;
+    }
+  }
+  return "rgb(31,127,80)";
+}
+
+// Creates the 4 rows once; afterwards only width, color and value change (the CSS transition makes the bars "grow")
+function buildBars() {
+  const target = document.getElementById("bars");
+  for (const c of CONFIG.classes) {
+    const name = document.createElement("div"); name.className = "name"; name.textContent = CONFIG.labels[c];
+    const track = document.createElement("div"); track.className = "track";
+    const bar = document.createElement("div"); bar.className = "bar"; bar.id = "bar-" + c;
+    track.appendChild(bar);
+    const value = document.createElement("div"); value.className = "value"; value.id = "value-" + c;
+    target.append(name, track, value);
+  }
+}
+
+function drawBars(r) {
+  for (const c of CONFIG.classes) {
+    const bar = document.getElementById("bar-" + c), value = document.getElementById("value-" + c);
+    if (!r) { bar.style.width = "0"; value.textContent = ""; bar.parentElement.title = ""; continue; }
+    const v = r.evidence[c];
+    bar.style.width = (v * 100).toFixed(1) + "%";
+    bar.style.backgroundColor = color(v);
+    value.textContent = pct(v);
+    value.classList.toggle("leader", c === r.leader);
+    bar.parentElement.title = `evidence ${pct(v)} · probability ${pct(r.probabilities[c])} · ` +
+                              `case understanding ${pct(r.understanding, 0)}`;
+  }
+}
+
+const chips = () => `<div class="chips"><span class="chip">Generated tokens: <b>0</b></span></div>`;
+
+// Only numbers and fixed labels go in as HTML; the user's text always goes in through textContent
+function drawCard(r) {
+  const card = document.getElementById("card");
+  card.className = "card";
+  if (r.state === "empty") {
+    card.innerHTML = `<div class="kicker">Diagnosis</div><p>Start writing the case in the field on the left.</p>`;
+    return;
+  }
+  if (r.state === "waiting") {
+    const missing = r.min_tokens - r.record_tokens;
+    card.innerHTML =
+      `<div class="kicker">Waiting for minimum context</div>` +
+      `<div class="big">${r.record_tokens}<span> / ${r.min_tokens} tokens</span></div>` +
+      `<div class="progress"><div style="width:${(100 * r.record_tokens / r.min_tokens).toFixed(0)}%"></div></div>` +
+      `<p><b>${missing} tokens</b> to go (about ${Math.floor(missing * 3 / 4)} words). Laya switches on when the ` +
+      `record is long enough; the count includes the section titles and the <i>Not documented.</i> placeholders ` +
+      `of empty sections. No inference runs before that.</p>` + chips();
+    return;
+  }
+  if (r.state === "out_of_scope") {
+    const s = r.scope;
+    const reason = s.reason === "few_terms"
+      ? `no clinical vocabulary (${s.terms} clinical terms; at least ${s.min_terms} needed)`
+      : `too far from the clinical cases Laya was trained on (distance ${s.distance.toFixed(1)}; limit ${s.limit.toFixed(1)})`;
+    card.className = "card out";
+    card.innerHTML =
+      `<div class="kicker">Not a clinical case</div>` +
+      `<div class="big">No diagnosis</div>` +
+      `<p>This text does not look like a clinical case: ${reason}. Laya only knows four acute abdominal ` +
+      `diagnoses, so it gives no probabilities here instead of forcing one of them.</p>` +
+      `<p>Describe a patient with acute abdominal pain, in English: history, physical exam and labs.</p>`;
+    return;
+  }
+  const b = r.budget, ps = r.p_surgical;
+  const rows = [["Evidence (bars)", `${pct(r.evidence[r.leader])} = probability × case understanding`]];
+  if (r.recalibrated) rows.push(["Laya without recalibration",
+                                 `${CONFIG.labels[r.original_leader]} ${pct(r.original[r.original_leader])}`]);
+  rows.push(["Management" + (r.recalibrated ? " (not recalibrated)" : ""),
+             `${ps >= 0.5 ? "Surgical" : "Conservative"} · P(surgical) ${pct(ps)}`],
+            ["Tokens read", `${b.sequence_tokens} / ${CONFIG.max_len} (question ${b.head_tokens} + record ` +
+                            `${b.record_tokens_used})`],
+            ["Inference", `${r.ms.toFixed(0)} ms`]);
+  card.className = "card result";
+  card.innerHTML =
+    `<div class="kicker">Most likely diagnosis</div>` +
+    `<div class="leader-name">${CONFIG.labels[r.leader]}<span>${pct(r.probabilities[r.leader])}</span></div>` +
+    `<div class="sub">Probability${r.recalibrated ? " (recalibrated for partial cases)" : ""} · ` +
+    `case understanding ${pct(r.understanding, 0)}</div>` +
+    `<div class="progress"><div style="width:${(r.understanding * 100).toFixed(0)}%"></div></div>` +
+    `<table>${rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("")}</table>` +
+    (b.truncated ? `<p class="alert">Text over budget: ${b.tokens_dropped} record tokens were truncated.</p>` : "") +
+    chips();
+}
+
+function drawWarnings(w) {
+  const box = document.getElementById("warnings");
+  const items = [
+    ["Disease or surgery name", w.disease_or_surgery_name, `masked as ${CONFIG.mask} before Laya reads the text.`],
+    ["Imaging", w.imaging, "the whole sentence is removed from the history and physical exam (trained without imaging)."],
+    ["Post-operative finding", w.postop_finding, "the clause is removed from the physical exam."],
+  ].filter(([, terms]) => terms.length);
+  box.hidden = !items.length;
+  box.replaceChildren();
+  if (!items.length) return;
+  const h = document.createElement("h4"); h.textContent = "⚠ Terms never seen in training";
+  const ul = document.createElement("ul");
+  for (const [name, terms, effect] of items) {
+    const li = document.createElement("li");
+    const b = document.createElement("b"); b.textContent = name + ": ";
+    li.append(b, terms.join(", ") + " → " + effect);
+    ul.appendChild(li);
+  }
+  box.append(h, ul);
+}
+
+const SECTION_NAMES = {hpi: "history", pe: "physical examination", lab: "labs"};
+
+// Always the latest version of the text: late responses to older requests are discarded
+async function analyze() {
+  const mine = ++request;
+  try {
+    const resp = await fetch("/api/analyze", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text: field.value}),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const r = await resp.json();
+    if (mine !== request) return;
+    drawBars(r.state === "result" ? r : null);
+    drawCard(r);
+    drawWarnings(r.warnings);
+    document.getElementById("model-text").textContent = r.model_text;
+    document.getElementById("sections-read").textContent = r.sections_read.length
+      ? "Sections read: " + r.sections_read.map(s => SECTION_NAMES[s]).join(" · ") : "";
+  } catch (e) {
+    if (mine !== request) return;
+    const card = document.getElementById("card");
+    card.className = "card";
+    card.replaceChildren();
+    const p = document.createElement("p"); p.className = "error";
+    p.textContent = `Could not reach the local Laya server (${e.message}). Is "python server.py" running?`;
+    card.appendChild(p);
+  }
+}
+
+function schedule() { clearTimeout(timer); timer = setTimeout(analyze, 120); }
+
+// During automatic typing: at most one request in flight; when it ends, analyze the latest text again
+let inFlight = false, again = false;
+async function analyzeContinuously() {
+  if (inFlight) { again = true; return; }
+  inFlight = true;
+  await analyze();
+  inFlight = false;
+  if (again) { again = false; analyzeContinuously(); }
+}
+
+// Example cases typed word by word into the single field (history → exam → labs, with the titles), with Laya
+// following along. Longer pause between sections. Stops when the user types, clicks Clear or picks another case.
+const MS_PER_WORD = 90, MS_BETWEEN_SECTIONS = 500;
+let typingRun = 0;
+const wait = ms => new Promise(ok => setTimeout(ok, ms));
+
+async function typeCase(ex, button) {
+  const mine = ++typingRun;
+  document.querySelectorAll(".examples button").forEach(b => b.classList.remove("typing"));
+  button.classList.add("typing");
+  field.value = "";
+  analyze();
+  for (const word of ex.text.match(/\S+\s*/g) || []) {  // keeps the original spaces and line breaks
+    await wait(/\n\n/.test(field.value.slice(-2)) ? MS_BETWEEN_SECTIONS : MS_PER_WORD);
+    if (mine !== typingRun) return;
+    field.value += word;
+    field.scrollTop = field.scrollHeight;
+    analyzeContinuously();
+  }
+  if (mine === typingRun) button.classList.remove("typing");
+}
+
+function stopTyping() {
+  typingRun++;
+  document.querySelectorAll(".examples button").forEach(b => b.classList.remove("typing"));
+}
+
+function buildExamples() {
+  const target = document.getElementById("examples");
+  for (const ex of CONFIG.examples) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = ex.label;
+    b.onclick = () => typeCase(ex, b);
+    target.appendChild(b);
+  }
+  const clear = document.createElement("button"); clear.type = "button"; clear.className = "clear";
+  clear.textContent = "Clear";
+  clear.onclick = () => { stopTyping(); field.value = ""; analyze(); };
+  target.appendChild(clear);
+}
+
+// Local server address (server.py). Outside it (file opened from disk, VS Code preview, etc.) there is no /api:
+// the page looks for the server and, if it is running, reopens itself through it.
+const SERVER = "http://127.0.0.1:8000/";
+
+function serverUp() {
+  // An image is not blocked by the browser the way a cross-origin fetch is, so it works as a connection test
+  return new Promise(ok => {
+    const img = new Image();
+    img.onload = () => ok(true); img.onerror = () => ok(false);
+    img.src = SERVER + "logo.svg?t=" + Date.now();
+  });
+}
+
+function showServerNotice() {
+  const notice = document.getElementById("server-notice");
+  notice.hidden = false;
+  notice.innerHTML =
+    `<b>This page needs the local Laya server.</b> In a terminal, in the repository folder, run ` +
+    `<code>conda activate layamed</code> and then <code>python server.py</code>. When it prints ` +
+    `<code>LayaMed at ${SERVER}</code>, open <a href="${SERVER}">${SERVER}</a> (this page reloads by itself). ` +
+    `From another computer on the same network: start it with <code>python server.py --lan</code> and open ` +
+    `the address it prints (<code>http://&lt;server IP&gt;:8000</code>), not this file.`;
+  document.querySelector(".main").hidden = true;
+  // Check again every 3 s and open the page through the server as soon as it is up
+  setInterval(async () => { if (await serverUp()) location.href = SERVER; }, 3000);
+}
+
+(async () => {
+  try {
+    const resp = await fetch("/api/config");
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    CONFIG = await resp.json();
+  } catch (e) {
+    if (await serverUp()) { location.href = SERVER; return; }
+    showServerNotice();
+    return;
+  }
+  buildBars();
+  buildExamples();
+  // Typing by hand stops the automatic typing (setting .value from code does not fire "input")
+  field.addEventListener("input", () => { stopTyping(); schedule(); });
+  analyze();
+})();
+</script>
+</body>
+</html>
