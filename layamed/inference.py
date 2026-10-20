@@ -81,7 +81,11 @@ _RE_US = re.compile(r"\bUS\b")
 _RE_POSTOP = (r"incision\w*|\bc/d/i\b|\bcdi\b|staple\w*|steri-?strip\w*|dressing\w*|\bJP\b|\bdrains?\b|"
               r"\bport\s+sites?\b|post-?op\w*|\bs/p\b|surgical\s+site\w*|\bwound\w*")
 _RE_POSTOP_TEST = re.compile(_RE_POSTOP, re.IGNORECASE)
-_RE_POSTOP_CLAUSE = re.compile(r"[^,;.\n]*(?:" + _RE_POSTOP + r")[^,;.\n]*[,;.]?", re.IGNORECASE)
+_RE_CLAUSE_END = re.compile(r"([,;.\n])")
+# Organ names of the 4 diseases: not masked (they are legitimate findings, e.g. "tender gallbladder"), but they can
+# give the answer away, so the interface warns about them
+_RE_ORGAN = re.compile(r"\b(?:appendi(?:x|ces|ceal)|gall\s?bladder|pancrea(?:s|tic)|diverticul(?:a|um|ar|osis))\b",
+                       re.IGNORECASE)
 _RE_SENTENCES = re.compile(r"(?<=[.!?])\s+|\n+")
 
 
@@ -100,6 +104,21 @@ def _drop_imaging_sentences(t: str) -> str:
     return " ".join(s for s in _RE_SENTENCES.split(t) if s.strip() and not _has_imaging(s))
 
 
+def _drop_postop_clauses(t: str) -> str:
+    """Replaces each clause (text between , ; . or line break) that has a post-operative term, together with the
+    punctuation that closes it, by a space; line breaks are kept. Linear in the text length (a single regex with
+    [^,;.\\n]* around the terms was quadratic and froze the server on long texts without punctuation)."""
+    pieces = _RE_CLAUSE_END.split(t)  # [clause, separator, clause, separator, ..., clause]
+    out = []
+    for i in range(0, len(pieces), 2):
+        clause, sep = pieces[i], (pieces[i + 1] if i + 1 < len(pieces) else "")
+        if _RE_POSTOP_TEST.search(clause):
+            out.append(" \n" if sep == "\n" else " ")
+        else:
+            out.append(clause + sep)
+    return "".join(out)
+
+
 def _mask(t: str) -> str:
     return _RE_DIAG.sub(MASK_TOKEN, t)
 
@@ -115,7 +134,7 @@ def clean_section(text: Optional[str], section: str) -> str:
     if section == "lab":
         return _mask(t.strip()) or EMPTY_SECTION["lab"]
     if section == "pe":
-        t = _RE_POSTOP_CLAUSE.sub(" ", t)
+        t = _drop_postop_clauses(t)
     t = _drop_imaging_sentences(t)
     t = _mask(t)
     return _tidy(t) or EMPTY_SECTION[section]
@@ -169,7 +188,20 @@ def audit_text(text: str) -> Dict[str, List[str]]:
         "disease_or_surgery_name": sorted({m.group(0) for m in _RE_DIAG.finditer(text)}),
         "imaging": sorted({m.group(0) for m in _RE_IMAGING.finditer(text)} | {m.group(0) for m in _RE_US.finditer(text)}),
         "postop_finding": sorted({m.group(0) for m in _RE_POSTOP_TEST.finditer(text)}),
+        "organ_name": sorted({m.group(0) for m in _RE_ORGAN.finditer(text)}),
     }
+
+
+# A title after the end of a sentence ("... pain. Exam: soft") does not start a section: split_free_text only reads
+# titles at the start of a line. The interface warns so the text is not silently read as history.
+_RE_INLINE_TITLE = re.compile(
+    r"(?i)(?<=[.;])[ \t]+(history of present illness|hpi|physical examination|physical exam|exam|"
+    r"laboratory results|labs|lab)[ \t]*:")
+
+
+def inline_titles(text: str) -> List[str]:
+    """Section titles typed in the middle of a line (ignored by split_free_text)."""
+    return sorted({m.group(1) for m in _RE_INLINE_TITLE.finditer(text or "")})
 
 
 # ==============================================================================

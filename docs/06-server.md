@@ -34,7 +34,7 @@ Fields of a `result`:
 | `evidence` | probability × understanding (what the bars show) |
 | `p_surgical` | P(surgical management) |
 | `budget` | head tokens, record tokens, tokens dropped, whether it was truncated |
-| `warnings` | terms never seen in training (disease, imaging, post-operative) |
+| `warnings` | terms to check: never seen in training (disease or surgery name, imaging, post-operative), organ names that can give the answer away (kept), and section titles in the middle of a line (`inline_title`, ignored; added by `server.py`) |
 | `model_text` | the exact text Laya read, after cleaning |
 | `ms` | detector + Laya time |
 
@@ -57,6 +57,7 @@ python server.py
 - `/docs`, `/redoc` and `/openapi.json` are disabled.
 - `analyze` is synchronous on purpose: FastAPI runs it in a worker thread, and the service `Lock` serializes the GPU.
 - A middleware refuses (403) clients outside private or loopback IPs. See `--lan` mode in [08-run-locally.md](08-run-locally.md).
+- The `Host` header must name this machine (`127.0.0.1`, `localhost` and, with `--lan`, its network IPs and name); otherwise 400. This blocks DNS rebinding (a web page that makes the browser talk to the local server). `LAYAMED_ALLOWED_HOSTS` replaces the list (comma-separated; `*` accepts any, as the Colab notebook does behind its proxy).
 
 Test without the interface (titles must start a line; in PowerShell, `` `n `` is a line break):
 

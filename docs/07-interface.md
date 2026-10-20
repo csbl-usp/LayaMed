@@ -26,7 +26,7 @@ A single file with plain HTML, CSS and JavaScript: no library, no CDN. The page 
 **2. Analysis while typing.** Every `input` event restarts a 120 ms timer; when typing pauses, `analyze()` sends `{"text": field.value}` to `POST /api/analyze`.
 
 ```js
-function schedule() { clearTimeout(timer); timer = setTimeout(analyze, 120); }
+function schedule() { clearTimeout(timer); timer = setTimeout(analyzeContinuously, 120); }
 ```
 
 Each request gets a number (`const mine = ++request`). A response is only drawn if it is still the latest one: late responses to older requests are discarded, so the screen never "goes back" to an earlier text.
@@ -57,7 +57,7 @@ for (const word of ex.text.match(/\S+\s*/g) || []) {
 }
 ```
 
-`analyzeContinuously` keeps at most one request in flight: if new text arrives during a request, it analyzes only the latest version again when the request ends. This way the GPU never builds up a queue.
+`analyzeContinuously` (used both when typing by hand and by the automatic typing) keeps at most one request in flight: if new text arrives during a request, it analyzes only the latest version again when the request ends. This way the GPU never builds up a queue.
 
 ## Customizing
 

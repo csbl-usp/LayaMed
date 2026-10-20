@@ -1,13 +1,14 @@
 # torch with CUDA: install it first, from the PyTorch index (see docs/01-environment.md)
 # laya: install it last, with: python -m pip install laya==0.4.7 --no-deps
-# Versions tested in 10/2026: transformers 5.19, fastapi 0.143, uvicorn 0.54, pydantic 2.14, numpy 2.4, pandas 3.0
-transformers>=5
+# Versions tested in 10/2026. laya 0.4.7 is installed with --no-deps and uses transformers internals, so the
+# minor versions are pinned: change them only after re-running the notebook.
+transformers==5.19.*
 safetensors
 huggingface_hub
-numpy
-pandas
+numpy==2.4.*
+pandas==3.0.*
 plotly
-fastapi
-uvicorn
-pydantic>=2
+fastapi==0.143.*
+uvicorn==0.54.*
+pydantic==2.14.*
 jupyter

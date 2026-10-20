@@ -18,7 +18,8 @@ Measures so the model does not learn wording shortcuts (a first version was 100%
       it (appendicitis ↔ diverticulitis, cholecystitis ↔ pancreatitis); the `mimics` column says which;
     - ~25% atypical presentations (mildly raised lipase in cholecystitis, right-sided pain in diverticulitis,
       isolated epigastric pain in cholecystitis, pancreatitis without back radiation, etc.);
-    - no disease or surgery names and no imaging (checked with inference.audit_text);
+    - no disease or surgery names, no imaging and no post-operative findings (checked with inference.audit_text;
+      generation fails otherwise);
     - several wordings per sentence and shuffled order (the first history sentence is always the opening).
 The `split` column (train/val/test 70/15/15) is drawn per base case: the 4 rows of a case stay in the same set, so
 the answer does not leak between training and test.
@@ -352,6 +353,10 @@ def case_rows(r: random.Random, disease: str, n: int, split: str) -> list[dict]:
     hpi_sentences = build_hpi(r, first, specific, woman=woman)
     k = max(2, round(len(hpi_sentences) * r.uniform(0.3, 0.6)))
     hpi_full, pe_full = " ".join(hpi_sentences), " ".join(pe_sentences)
+    found = {kind: terms for kind, terms in inf.audit_text("\n".join([hpi_full, pe_full, lab])).items()
+             if terms and kind != "organ_name"}  # organ names are legitimate findings ("tender gallbladder")
+    if found:
+        raise ValueError(f"case {disease} {n}: terms the model must not see: {found}")
     versions = {"hpi_partial": (" ".join(hpi_sentences[:k]), "", ""), "hpi": (hpi_full, "", ""),
                 "hpi_pe": (hpi_full, pe_full, ""), "complete": (hpi_full, pe_full, lab)}
     case_id = f"{disease[:4]}_{n:04d}"

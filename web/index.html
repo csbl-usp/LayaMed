@@ -269,11 +269,15 @@ function drawWarnings(w) {
     ["Disease or surgery name", w.disease_or_surgery_name, `masked as ${CONFIG.mask} before Laya reads the text.`],
     ["Imaging", w.imaging, "the whole sentence is removed from the history and physical exam (trained without imaging)."],
     ["Post-operative finding", w.postop_finding, "the clause is removed from the physical exam."],
+    ["Organ name", w.organ_name, "kept as written, but it can give the diagnosis away; check whether the " +
+                                 "training cases had it."],
+    ["Section title in the middle of a line", w.inline_title || [],
+     "ignored: titles only start a section at the beginning of a line, so this text stays in the current section."],
   ].filter(([, terms]) => terms.length);
   box.hidden = !items.length;
   box.replaceChildren();
   if (!items.length) return;
-  const h = document.createElement("h4"); h.textContent = "⚠ Terms never seen in training";
+  const h = document.createElement("h4"); h.textContent = "⚠ Check these terms";
   const ul = document.createElement("ul");
   for (const [name, terms, effect] of items) {
     const li = document.createElement("li");
@@ -314,10 +318,10 @@ async function analyze() {
   }
 }
 
-function schedule() { clearTimeout(timer); timer = setTimeout(analyze, 120); }
-
-// During automatic typing: at most one request in flight; when it ends, analyze the latest text again
+// At most one request in flight (typing by hand or automatic typing); when it ends, analyze the latest text again
 let inFlight = false, again = false;
+function schedule() { clearTimeout(timer); timer = setTimeout(analyzeContinuously, 120); }
+
 async function analyzeContinuously() {
   if (inFlight) { again = true; return; }
   inFlight = true;
