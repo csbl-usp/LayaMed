@@ -52,6 +52,6 @@ recal = rc.Recalibrator.fit(P_laya, tokens, texts, y, freq, n_empty)
 recal.save("data/recalibration.json")
 ```
 
-The notebook only saves the file if the NLL of the **test** prefixes improves. The example already trains on partial cases, so the gain is small; with a model trained only on complete cases it is large. Without the file, the interface uses the Laya output as is.
+The decision to use it is taken on validation too, never on test: the notebook fits on half of the validation cases (split by base case) and keeps the recalibration only if the NLL of the prefixes of the other half improves; then it refits on the whole validation set and saves the file. The test NLL is only reported. The example already trains on partial cases, so the gain is small; with a model trained only on complete cases it is large. Without the file, the interface uses the Laya output as is.
 
 Next: [6. Service and server](06-server.md).

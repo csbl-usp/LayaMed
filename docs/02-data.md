@@ -29,7 +29,7 @@ White Blood Cells: 13.9 K/uL, Lipase: 2280.0 IU/L, ...
 | exam | drops post-operative clauses (incision, drain, dressing...) and imaging sentences; masks | a post-operative finding reveals that surgery happened |
 | labs | masks only | |
 
-The terms are in `LEAK_TERMS`, `_RE_IMAGING` and `_RE_POSTOP`. Adapt them if you change the diseases. `inference.audit_text` lists what was found, and the interface shows it as a warning.
+The terms are in `LEAK_TERMS`, `_RE_IMAGING` and `_RE_POSTOP`. Adapt them if you change the diseases. `inference.audit_text` lists what was found, and the interface shows it as a warning. It also lists organ names of the 4 diseases (`appendix`, `gallbladder`, `pancreatic`, `diverticulosis`...) in `_RE_ORGAN`: they are **not** masked, because they are legitimate findings ("tender gallbladder"), but in real records they can give the answer away; check whether your training data has them and decide whether to mask them in both training and inference. The synthetic generator fails if a case has a term that is masked or dropped.
 
 ## Synthetic cases (this repository's example)
 

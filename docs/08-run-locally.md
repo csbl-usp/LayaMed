@@ -46,7 +46,7 @@ For another computer to reach it:
 New-NetFirewallRule -DisplayName "LayaMed 8000" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow -Profile Private
 ```
 
-**Never forward the port on the router** or expose the server to the internet: it has no authentication. Use `--lan` only on trusted networks. If the model was trained on restricted data, clients see only the probabilities, but the data usage agreement may restrict even that.
+**Never forward the port on the router** or expose the server to the internet: it has no authentication. Behind a tunnel or reverse proxy (ngrok, cloudflared, VS Code port forwarding) every client looks like `127.0.0.1` to the server, so the private-network check no longer protects it; do not use one outside Colab. If you open the page by the machine's name and get "Invalid host header", add it with `LAYAMED_ALLOWED_HOSTS` (see [06-server.md](06-server.md)). Use `--lan` only on trusted networks. If the model was trained on restricted data, clients see only the probabilities, but the data usage agreement may restrict even that.
 
 To remove the rule later:
 

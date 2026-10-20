@@ -1,0 +1,4 @@
+# Tests (python -m pytest): text functions, synthetic generator and recalibration; no GPU, torch or laya needed
+numpy==2.4.*
+pandas==3.0.*
+pytest

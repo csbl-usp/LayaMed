@@ -4,7 +4,10 @@ Usage (in the layamed environment):
     python server.py          this machine only: http://127.0.0.1:8000
     python server.py --lan    also for other computers on the same local network: http://<this machine's IP>:8000
 In --lan mode the server only accepts private-network addresses (home, lab); never open the port to the
-internet. Clients see only the probabilities: the weights and the training data never leave this machine.
+internet. Requests must also name this machine in the Host header (127.0.0.1, localhost or, with --lan, its network
+IPs and name), which blocks DNS rebinding from a web page; LAYAMED_ALLOWED_HOSTS replaces that list (comma-separated,
+"*" for any, e.g. behind the Colab proxy). Clients see only the probabilities: the weights and the training data
+never leave this machine.
 The Laya logic lives in layamed/service.py; this file only holds the API and the page.
 """
 import ipaddress
@@ -18,6 +21,7 @@ sys.path.insert(0, str(ROOT))  # allows "import layamed" without installing the 
 
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
@@ -25,10 +29,33 @@ from layamed import inference as inf
 from layamed.service import EXAMPLE_LABELS, EXAMPLES, LABELS, Service
 
 PORT = int(os.environ.get("PORT", 8000))  # another port: $env:PORT = "8001" before running
+LAN = "--lan" in sys.argv
 MAX_CHARS = 60_000  # single field; a clinical case rarely exceeds 10 thousand characters
 
 SERVICE = Service(ROOT)
 app = FastAPI(title="LayaMed", docs_url=None, redoc_url=None, openapi_url=None)
+
+
+def lan_ips():
+    """Private IPv4 addresses of this machine (the ones other computers on the network use to reach it)."""
+    try:
+        ips = {e[4][0] for e in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)}
+    except socket.gaierror:
+        return []
+    return sorted(ip for ip in ips if ipaddress.ip_address(ip).is_private and not ipaddress.ip_address(ip).is_loopback)
+
+
+def allowed_hosts():
+    if os.environ.get("LAYAMED_ALLOWED_HOSTS"):
+        return [h.strip() for h in os.environ["LAYAMED_ALLOWED_HOSTS"].split(",") if h.strip()]
+    hosts = ["127.0.0.1", "localhost"]
+    if LAN:
+        name = socket.gethostname()
+        hosts += lan_ips() + [name, name + ".local", name.lower(), name.lower() + ".local"]
+    return list(dict.fromkeys(hosts))  # without repeats
+
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts())
 
 
 @app.middleware("http")
@@ -76,20 +103,14 @@ def config():
 def analyze(case: Case):
     # Synchronous on purpose: FastAPI runs it in a worker thread and the Service serializes GPU access
     sections = inf.split_free_text(case.text)
-    return {**SERVICE.analyze(sections["hpi"], sections["pe"], sections["lab"]),
-            "sections_read": [s for s in inf.SECTIONS if sections[s]]}
-
-
-def lan_ips():
-    """Private IPv4 addresses of this machine (the ones other computers on the network use to reach it)."""
-    ips = {e[4][0] for e in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)}
-    return sorted(ip for ip in ips if ipaddress.ip_address(ip).is_private and not ipaddress.ip_address(ip).is_loopback)
+    result = SERVICE.analyze(sections["hpi"], sections["pe"], sections["lab"])
+    result["warnings"]["inline_title"] = inf.inline_titles(case.text)
+    return {**result, "sections_read": [s for s in inf.SECTIONS if sections[s]]}
 
 
 if __name__ == "__main__":
-    lan = "--lan" in sys.argv
     print(f"LayaMed at http://127.0.0.1:{PORT}")
-    if lan:
+    if LAN:
         for ip in lan_ips() or ["(no local network IP found)"]:
             print(f"  other computers on the network: http://{ip}:{PORT}")
-    uvicorn.run(app, host="0.0.0.0" if lan else "127.0.0.1", port=PORT, log_level="warning")
+    uvicorn.run(app, host="0.0.0.0" if LAN else "127.0.0.1", port=PORT, log_level="warning")

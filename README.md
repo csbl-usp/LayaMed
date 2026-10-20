@@ -74,8 +74,12 @@ LayaMed/
 │   └── out_of_scope.py          non-medical and other-disease texts, to test the detector
 ├── notebooks/layamed_colab.ipynb   complete Colab example
 ├── docs/                        step-by-step guide
-└── requirements.txt
+├── tests/                       tests without GPU (python -m pytest)
+├── requirements.txt             tested versions
+└── requirements-dev.txt         what the tests need
 ```
+
+Tests (text cleaning, synthetic cases, recalibration; no GPU or model needed): `python -m pip install -r requirements-dev.txt` and `python -m pytest`. They also run on GitHub Actions on every push.
 
 Generated files (kept out of git, see `.gitignore`): `checkpoint/` (trained weights), `data/scope.pt`, `data/recalibration.json`, `data/synthetic/`, `reports/`.
 
