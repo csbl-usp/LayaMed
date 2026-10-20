@@ -1,5 +1,7 @@
 # 5. Scope detector and recalibration
 
+[← 4. Inference](04-inference.md) · [Guide index](../README.md#step-by-step-guide) · [6. Service and server →](06-server.md)
+
 ## The problem
 
 Laya is closed on the 4 diseases: **any** text comes out as one of them. A shopping list can get "cholecystitis 85%", and the model's confidence does not help to tell them apart (non-clinical text often comes out with high probability). That is why the interface only shows a probability if the text passes the detector.
@@ -54,4 +56,6 @@ recal.save("data/recalibration.json")
 
 The decision to use it is taken on validation too, never on test: the notebook fits on half of the validation cases (split by base case) and keeps the recalibration only if the NLL of the prefixes of the other half improves; then it refits on the whole validation set and saves the file. The test NLL is only reported. The example already trains on partial cases, so the gain is small; with a model trained only on complete cases it is large. Without the file, the interface uses the Laya output as is.
 
-Next: [6. Service and server](06-server.md).
+---
+
+[← 4. Inference](04-inference.md) · [Guide index](../README.md#step-by-step-guide) · [6. Service and server →](06-server.md)

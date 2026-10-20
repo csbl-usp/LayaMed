@@ -1,5 +1,7 @@
 # 4. Inference in Python
 
+[← 3. Fine-tuning](03-fine-tuning.md) · [Guide index](../README.md#step-by-step-guide) · [5. Scope and recalibration →](05-scope-and-recalibration.md)
+
 ```python
 import torch                      # before numpy (see the OpenMP note in 01-environment.md)
 from pathlib import Path
@@ -54,4 +56,6 @@ Without titles, everything goes to the history.
 
 On an RTX 4060 Laptop (bf16): ~40 ms per case, ~50 ms per full interface analysis (detector + Laya), 1.2 GB of VRAM. On Colab's T4, about 2× slower.
 
-Next: [5. Scope and recalibration](05-scope-and-recalibration.md).
+---
+
+[← 3. Fine-tuning](03-fine-tuning.md) · [Guide index](../README.md#step-by-step-guide) · [5. Scope and recalibration →](05-scope-and-recalibration.md)

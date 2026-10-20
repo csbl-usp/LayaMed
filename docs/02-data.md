@@ -1,5 +1,7 @@
 # 2. Data
 
+[← 1. Environment](01-environment.md) · [Guide index](../README.md#step-by-step-guide) · [3. Fine-tuning →](03-fine-tuning.md)
+
 ## Input format
 
 Laya reads a single text with 3 sections, always in this order and with these titles (`layamed.inference.build_text`):
@@ -69,4 +71,6 @@ If the data come from a database with a usage agreement (for example, MIMIC unde
 - demo cases in the interface: hand-written or synthetic;
 - check `.gitignore` before each commit: `checkpoint/` and `data/` are already excluded.
 
-Next: [3. Fine-tuning](03-fine-tuning.md).
+---
+
+[← 1. Environment](01-environment.md) · [Guide index](../README.md#step-by-step-guide) · [3. Fine-tuning →](03-fine-tuning.md)

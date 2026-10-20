@@ -1,5 +1,7 @@
 # 0. Overview
 
+[Guide index](../README.md#step-by-step-guide) · [1. Environment →](01-environment.md)
+
 ## What LayaMed shows
 
 While the case is being written, the interface shows:
@@ -43,4 +45,6 @@ Laya **generates 0 tokens**: it reads everything at once and gives one probabili
 
 The price: the model is **closed on its training options**. It cannot say "another disease"; that is why the scope detector exists, and why cases of other diseases still get probabilities (see [09-limitations.md](09-limitations.md)).
 
-Next: [1. Environment](01-environment.md).
+---
+
+[Guide index](../README.md#step-by-step-guide) · [1. Environment →](01-environment.md)

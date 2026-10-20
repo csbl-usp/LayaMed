@@ -1,5 +1,7 @@
 # 8. Run on your computer
 
+[← 7. Interface](07-interface.md) · [Guide index](../README.md#step-by-step-guide) · [9. Limitations →](09-limitations.md)
+
 ## 1. Environment
 
 Follow option B in [01-environment.md](01-environment.md).
@@ -64,4 +66,6 @@ Remove-NetFirewallRule -DisplayName "LayaMed 8000"
 | port 8000 busy | `$env:PORT = "8001"` before `python server.py` |
 | the page says "needs the local Laya server" | the page was opened from disk; open it through the server's address |
 
-Next: [9. Limitations](09-limitations.md).
+---
+
+[← 7. Interface](07-interface.md) · [Guide index](../README.md#step-by-step-guide) · [9. Limitations →](09-limitations.md)
