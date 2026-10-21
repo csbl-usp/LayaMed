@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use LayaMed, please cite it with the metadata below."
+title: "LayaMed: live diagnostic evidence while writing a clinical case"
+type: software
+authors:
+  - name: "Computational Systems Biology Laboratory (CSBL-USP)"
+  - given-names: "Luís"
+    family-names: "Espinosa"
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/csbl-usp/LayaMed"
+abstract: >-
+  A step-by-step guide and local interface that show, while a clinical case is
+  being written, the probabilities of a Laya encoder fine-tuned on 4 acute
+  abdominal diseases (appendicitis, cholecystitis, pancreatitis and
+  diverticulitis), with an out-of-scope detector and recalibration for partial
+  cases. Teaching example with synthetic cases; not a medical device.
+keywords:
+  - clinical NLP
+  - medical AI
+  - encoder
+  - calibration
+  - out-of-distribution detection
+  - acute abdomen

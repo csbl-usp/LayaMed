@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Step-by-step guide
+    url: https://github.com/csbl-usp/LayaMed#-step-by-step-guide
+    about: Most questions are answered in the guide (environment, data, training, server, interface).
+  - name: Security problem
+    url: https://github.com/csbl-usp/LayaMed/security/advisories/new
+    about: Report vulnerabilities privately, not as a public issue.

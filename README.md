@@ -169,6 +169,14 @@ LayaMed started as a proof of concept of a study that compared fine-tuned Laya w
 
 The base model is [Laya Multilingual](https://huggingface.co/convaiinnovations/laya) (`convaiinnovations/laya`, `multilingual` folder). Check the base model license before redistributing weights trained from it.
 
+## 📖 Citing
+
+Use **Cite this repository** in the sidebar (APA or BibTeX), generated from [CITATION.cff](CITATION.cff).
+
+## 🤝 Contributing
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md). **Never share real patient data** in issues or pull requests. Security problems: [SECURITY.md](SECURITY.md). Changes: [CHANGELOG.md](CHANGELOG.md).
+
 ---
 
 <p align="center">
