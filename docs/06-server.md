@@ -1,5 +1,7 @@
 # 6. Service and server
 
+[← 5. Scope and recalibration](05-scope-and-recalibration.md) · [Guide index](../README.md#-step-by-step-guide) · [7. Interface →](07-interface.md)
+
 ## `layamed/service.py`
 
 All the logic lives in one class, separate from the interface. Any front end (the HTML page, a Gradio app, a script) can use the same analysis.
@@ -69,4 +71,6 @@ $body = @{ text = "History: 19-year-old woman with 18 hours of periumbilical pai
 Invoke-RestMethod -Uri http://127.0.0.1:8000/api/analyze -Method Post -ContentType "application/json" -Body $body
 ```
 
-Next: [7. Interface](07-interface.md).
+---
+
+[← 5. Scope and recalibration](05-scope-and-recalibration.md) · [Guide index](../README.md#-step-by-step-guide) · [7. Interface →](07-interface.md)

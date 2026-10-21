@@ -1,5 +1,7 @@
 # 7. Interface (`web/index.html`)
 
+[← 6. Service and server](06-server.md) · [Guide index](../README.md#-step-by-step-guide) · [8. Run on your computer →](08-run-locally.md)
+
 ![LayaMed interface](img/interface.jpg)
 
 A single file with plain HTML, CSS and JavaScript: no library, no CDN. The page works offline and sends nothing outside the local server.
@@ -16,7 +18,7 @@ A single file with plain HTML, CSS and JavaScript: no library, no CDN. The page 
 ```
 
 - A two-column CSS grid (`5fr 4fr`); below 760 px wide it becomes a single column (phones).
-- Colors as CSS variables (`--green #2E9461`, `--blue #1F6E9C`).
+- Colors as CSS tokens on `:root` (`--green #2E9461`, `--blue #1F6E9C`...), redefined for dark mode under `@media (prefers-color-scheme: dark)`. Text uses darker greens than fills (`--green-ink`) so small text meets the WCAG AA contrast; the bar colors come from `--bar-0` to `--bar-3`.
 - The logo is embedded as SVG (and as a `data:` favicon), so it shows even when the file is opened from disk.
 
 ## The JavaScript, step by step
@@ -63,7 +65,11 @@ for (const word of ex.text.match(/\S+\s*/g) || []) {
 
 - **Texts and language:** all labels are in the HTML and in `drawCard`.
 - **Example cases:** `EXAMPLES` and `EXAMPLE_LABELS` in `layamed/service.py` (history, exam, labs).
+- **Screenshots and demo GIF:** with the server running on the real model, `python tools/capture_demo.py` writes `docs/img/interface.png`, `interface-dark.png` and `demo.gif` (see the script's docstring).
+- **Colors and dark mode:** the tokens at the top of the `<style>` block (both themes).
 - **Typing speed:** `MS_PER_WORD` and `MS_BETWEEN_SECTIONS`.
 - **Bar scale:** `FULL_CASE_TOKENS` and `FULL_SECTION_TOKENS` in `service.py`. To show the plain probability in the bars, replace `r.evidence[c]` with `r.probabilities[c]` in `drawBars`.
 
-Next: [8. Run on your computer](08-run-locally.md).
+---
+
+[← 6. Service and server](06-server.md) · [Guide index](../README.md#-step-by-step-guide) · [8. Run on your computer →](08-run-locally.md)

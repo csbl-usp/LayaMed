@@ -1,5 +1,7 @@
 # 1. Environment
 
+[← 0. Overview](00-overview.md) · [Guide index](../README.md#-step-by-step-guide) · [2. Data →](02-data.md)
+
 ## Option A: Google Colab
 
 Nothing to install. Open `notebooks/layamed_colab.ipynb` on Colab and enable the GPU in **Runtime → Change runtime type → GPU**. Cell 1 clones the repository and installs `laya==0.4.7` with `--no-deps`, so pip does not replace Colab's CUDA build of PyTorch.
@@ -59,4 +61,6 @@ The `laya` package changes often, and the version affects how the sequence is bu
 - **Duplicate OpenMP (conda + pip):** if numpy/scipy come from conda (MKL) and torch from pip, each ships a different copy of OpenMP. With torch loaded, numpy linear algebra (`@`, `np.linalg`, `scipy.optimize`) can crash Python (`OMP: Error #15`). That is why this repository does matrix math in torch and the recalibration uses element-wise operations only. Installing everything with pip (as above) avoids the problem.
 - **bf16 × fp16:** Ampere or newer GPUs (RTX 30/40, A100, L4) use bf16; older ones (T4, RTX 20) use fp16. The code chooses automatically.
 
-Next: [2. Data](02-data.md).
+---
+
+[← 0. Overview](00-overview.md) · [Guide index](../README.md#-step-by-step-guide) · [2. Data →](02-data.md)

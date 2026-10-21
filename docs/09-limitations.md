@@ -1,5 +1,7 @@
 # 9. Limitations
 
+[← 8. Run on your computer](08-run-locally.md) · [Guide index](../README.md#-step-by-step-guide)
+
 ## What LayaMed does not do
 
 - **It is not a medical device** and must not guide clinical decisions.
@@ -21,3 +23,7 @@
 - Base model: [convaiinnovations/laya](https://huggingface.co/convaiinnovations/laya). Check its license before redistributing derived weights.
 - `laya` package (PyPI): see the package license.
 - This repository: code and guide; the example cases are fictional.
+
+---
+
+[← 8. Run on your computer](08-run-locally.md) · [Guide index](../README.md#-step-by-step-guide)

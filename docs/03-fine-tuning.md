@@ -1,5 +1,7 @@
 # 3. Fine-tuning
 
+[← 2. Data](02-data.md) · [Guide index](../README.md#-step-by-step-guide) · [4. Inference →](04-inference.md)
+
 Everything is in cells 3a–3c of `notebooks/layamed_colab.ipynb`.
 
 ## The model
@@ -76,4 +78,6 @@ It is the same format as the base model, so `laya.Agent("checkpoint")` loads it 
 
 Cell 4 measures, on the test set, the accuracy and the mean probability of the right disease **by stage**. Expected: both grow from `hpi_partial` to `complete`. If complete-case accuracy is not well above chance (25%), check the GPU, the number of epochs and whether `QUICK` mode was left on.
 
-Next: [4. Inference](04-inference.md).
+---
+
+[← 2. Data](02-data.md) · [Guide index](../README.md#-step-by-step-guide) · [4. Inference →](04-inference.md)

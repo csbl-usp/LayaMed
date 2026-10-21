@@ -10,96 +10,134 @@
      computer on the network, with server.py --lan; the /api calls are relative). Opened directly from disk, it redirects
      to the server if it is running, or explains how to start it. Nothing is loaded from the internet. -->
 <style>
+  /* Color tokens: light theme, redefined below for dark mode. Text greens are darker than fill greens (WCAG AA) */
   :root {
-    --blue: #1F6E9C; --green: #2E9461; --ink: #1F2D2A; --ink-soft: #5B6B66;
-    --green-light: #E9F1EA; --blue-light: #EEF4FA; --border: #D6E2DB; --field-bg: #FBFDFC;
+    color-scheme: light dark;
+    --blue: #1F6E9C; --green: #2E9461; --green-ink: #1E7048; --ink: #1F2D2A; --ink-soft: #5B6B66;
+    --bg: #FFFFFF; --surface: #FFFFFF; --field-bg: #FBFDFC; --border: #D6E2DB; --rule: #EEF3F0; --grid: #EEF3F0;
+    --green-light: #E9F1EA; --green-hover: #D7EADD; --blue-light: #EEF4FA; --placeholder: #8A9893;
+    --warn-bg: #FFF9EF; --warn-border: #F0D9B5; --warn-ink: #8A6D12; --warn-accent: #C9A227;
+    --alert: #8A4B12; --error: #A33A2B; --focus: rgba(31, 110, 156, 0.18);
+    --surgical: #9C3D2E; --surgical-bg: #FBEDEA; --conservative: #1F6E9C; --conservative-bg: #EEF4FA;
+    /* bar color by value (0, 35%, 70%, 100%): light blue → blue → green */
+    --bar-0: #D4E7F4; --bar-1: #5FA3D3; --bar-2: #1F6E9C; --bar-3: #1F7F50;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --blue: #6FB3E0; --green: #3FA872; --green-ink: #5CC08C; --ink: #E3ECE8; --ink-soft: #9FB2AB;
+      --bg: #111816; --surface: #18211E; --field-bg: #141C19; --border: #2C3B35; --rule: #24302B; --grid: #24302B;
+      --green-light: #1B2A24; --green-hover: #22382E; --blue-light: #1A2630; --placeholder: #6E807A;
+      --warn-bg: #2A2416; --warn-border: #5A4A24; --warn-ink: #E3C46A; --warn-accent: #C9A227;
+      --alert: #F0A868; --error: #F08A7A; --focus: rgba(111, 179, 224, 0.25);
+      --surgical: #F0A08F; --surgical-bg: #3A211C; --conservative: #8CC4EA; --conservative-bg: #1A2A36;
+      --bar-0: #2D4B60; --bar-1: #3F7FAE; --bar-2: #5FA3D3; --bar-3: #3FA872;
+    }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: #FFFFFF; color: var(--ink);
-         font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; }
   .page { max-width: 1240px; margin: 0 auto; padding: 0 24px 40px; }
 
   /* Header with the logo only, centered */
   header { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 22px 0 18px; }
   header svg { width: 64px; height: 64px; flex-shrink: 0; }
-  .server-notice { border: 1px solid #F0D9B5; background: #FFF9EF; border-radius: 12px; padding: 14px 18px;
-                   margin: 0 auto 18px; max-width: 760px; font-size: 15px; line-height: 1.5; }
-  .server-notice code { background: #FFFFFF; border: 1px solid #F0D9B5; border-radius: 6px; padding: 1px 6px; }
+  .server-notice { border: 1px solid var(--warn-border); background: var(--warn-bg); border-radius: 12px;
+                   padding: 14px 18px; margin: 0 auto 18px; max-width: 760px; font-size: 15px; line-height: 1.5; }
+  .server-notice code { background: var(--surface); border: 1px solid var(--warn-border); border-radius: 6px;
+                        padding: 1px 6px; }
   .server-notice a { color: var(--blue); font-weight: 600; }
   .main[hidden], .server-notice[hidden] { display: none; }
   .brand { font-size: 38px; font-weight: 700; letter-spacing: -0.5px; color: var(--blue); }
-  .brand span { color: var(--green); }
+  .brand span { color: var(--green-ink); }
+  .tagline { text-align: center; color: var(--ink-soft); font-size: 14px; margin: -8px 0 18px; }
 
   /* Text field on the left; chart and card fixed on the right */
   .main { display: grid; grid-template-columns: minmax(300px, 5fr) minmax(300px, 4fr); gap: 20px; align-items: start; }
   .right { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto;
            display: flex; flex-direction: column; gap: 14px; }
 
-  .block { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: #FFFFFF; }
+  .block { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: var(--surface); }
   .block + .block { margin-top: 14px; }
-  .block-label { display: inline-block; font-size: 13px; font-weight: 600; color: var(--green);
+  .block-label { display: inline-block; font-size: 13px; font-weight: 600; color: var(--green-ink);
                  background: var(--green-light); border-radius: 8px; padding: 3px 9px; margin-bottom: 10px; }
   textarea { width: 100%; resize: vertical; border: 1px solid var(--border); border-radius: 10px;
              background: var(--field-bg); padding: 10px 12px; font: inherit; font-size: 15px; line-height: 1.5;
              color: var(--ink); }
-  textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(31, 110, 156, 0.15); }
-  textarea::placeholder { color: #9AA8A3; }
+  textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--focus); }
+  textarea::placeholder { color: var(--placeholder); }
   .hint { font-size: 13px; color: var(--ink-soft); line-height: 1.45; margin-top: 8px; }
   .hint b { color: var(--ink); font-weight: 600; }
-  #sections-read { display: block; margin-top: 4px; color: var(--green); }
+  #sections-read { display: block; margin-top: 4px; color: var(--green-ink); }
 
   .examples { display: flex; flex-wrap: wrap; gap: 8px; }
   .examples button { border: 1px solid var(--border); background: var(--green-light); color: var(--ink);
                      border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 14px; cursor: pointer; }
-  .examples button:hover { background: #D7EADD; }
-  .examples button.clear { background: #FFFFFF; }
+  .examples button:hover { background: var(--green-hover); }
+  .examples button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .examples button.clear { background: var(--surface); }
   .examples button.typing { background: var(--green); border-color: var(--green); color: #FFFFFF; }
   details summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); }
   details pre { white-space: pre-wrap; font-size: 13px; background: var(--field-bg); border-radius: 10px;
                 padding: 10px 12px; margin: 10px 0 0; max-height: 320px; overflow: auto; }
 
-  /* Evidence bars */
-  .bars { display: grid; grid-template-columns: 112px 1fr 58px; row-gap: 14px; column-gap: 10px;
+  /* Evidence bars: the value sits right after the bar, in the track's right padding (the 0–100% scale and the
+     grid lines use only the content box, so they stay aligned with the axis) */
+  .bars { display: grid; grid-template-columns: 112px 1fr; row-gap: 14px; column-gap: 10px;
           align-items: center; margin-top: 6px; }
   .bars .name { font-size: 15px; text-align: right; }
-  .bars .track { height: 22px; border-radius: 6px; background: transparent; position: relative;
-                 background-image: repeating-linear-gradient(90deg, #E6EEEA 0 1px, transparent 1px 25%); }
-  .bars .bar { height: 100%; width: 0; border-radius: 6px; transition: width .35s ease, background-color .35s; }
-  .bars .value { font-size: 15px; font-variant-numeric: tabular-nums; }
-  .bars .leader { font-weight: 700; }
-  .axis { display: grid; grid-template-columns: 112px 1fr 58px; column-gap: 10px; margin-top: 6px;
+  .bars .track { height: 22px; display: flex; align-items: center; padding-right: 56px;
+                 background-image: linear-gradient(90deg, transparent calc(50% - 1px), var(--grid) 0 50%,
+                                                   transparent 0 calc(100% - 1px), var(--grid) 0);
+                 background-origin: content-box; background-clip: content-box; }
+  .bars .bar { height: 100%; width: 0; min-width: 3px; border-radius: 6px; flex-shrink: 0;
+               transition: width .35s ease, background-color .35s; }
+  .bars .value { font-size: 14px; font-variant-numeric: tabular-nums; margin-left: 8px; color: var(--ink-soft);
+                 white-space: nowrap; }
+  .bars .value.leader { font-weight: 700; color: var(--ink); }
+  .axis { display: grid; grid-template-columns: 112px 1fr; column-gap: 10px; margin-top: 6px;
           font-size: 12px; color: var(--ink-soft); }
-  .axis div:nth-child(2) { display: flex; justify-content: space-between; }
+  .axis div:nth-child(2) { display: flex; justify-content: space-between; padding-right: 56px; }
 
   /* Result card */
-  .card { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+  .card { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--surface); }
   .card.result { border-left: 5px solid var(--green); }
-  .card.out { border-left: 5px solid #C9A227; }
-  .card.out .kicker { color: #8A6D12; }
+  .card.out { border-left: 5px solid var(--warn-accent); }
+  .card.out .kicker { color: var(--warn-ink); }
   .card p { color: var(--ink-soft); font-size: 14px; line-height: 1.45; margin: 10px 0 0; }
-  .kicker { font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--green); font-weight: 600; }
+  .kicker { font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--green-ink); font-weight: 600; }
   .big { font-size: 30px; font-weight: 700; margin-top: 2px; }
   .big span { font-size: 15px; font-weight: 500; color: var(--ink-soft); }
   .leader-name { font-size: 26px; font-weight: 700; margin-top: 2px; display: flex; align-items: baseline; gap: 12px; }
-  .leader-name span { color: var(--green); }
+  .leader-name span { color: var(--green-ink); }
   .sub { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
   .progress { height: 6px; border-radius: 6px; background: var(--blue-light); margin: 6px 0; overflow: hidden; }
   .progress div { height: 100%; border-radius: 6px; background: var(--green); transition: width .35s ease; }
+  .pill { display: inline-block; font-size: 13px; font-weight: 600; border-radius: 999px; padding: 2px 10px;
+          margin-right: 6px; }
+  .pill.surgical { color: var(--surgical); background: var(--surgical-bg); }
+  .pill.conservative { color: var(--conservative); background: var(--conservative-bg); }
   table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
-  td { padding: 5px 0; border-bottom: 1px solid #EEF3F0; vertical-align: top; }
-  td:first-child { color: var(--ink-soft); width: 42%; padding-right: 8px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--green-light); color: var(--green); }
-  .alert { color: #8A4B12 !important; }
-  .warnings { border: 1px solid #F0D9B5; background: #FFF9EF; border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+  td { padding: 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--ink-soft); width: 34%; padding-right: 8px; }
+  td[title] { cursor: help; text-decoration: underline dotted var(--border); text-underline-offset: 3px; }
+  .alert { color: var(--alert) !important; }
+  .warnings { border: 1px solid var(--warn-border); background: var(--warn-bg); border-radius: 12px;
+              padding: 10px 14px; font-size: 14px; }
   .warnings h4 { margin: 0 0 6px; font-size: 14px; }
   .warnings ul { margin: 0; padding-left: 18px; }
   .warnings[hidden] { display: none; }
-  .error { color: #A33A2B; }
+  .error { color: var(--error); }
   /* Only on very narrow screens (phones) the chart moves below the text field */
   @media (max-width: 760px) {
+    .page { padding: 0 16px 32px; }
     .main { grid-template-columns: 1fr; }
     .right { position: static; max-height: none; }
+    .bars { grid-template-columns: 96px 1fr; }
+    .axis { grid-template-columns: 96px 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bars .bar, .progress div { transition: none; }
   }
 </style>
 </head>
@@ -119,6 +157,7 @@
     </svg>
     <div class="brand">Laya<span>Med</span></div>
   </header>
+  <p class="tagline">Diagnostic evidence while you write the case · teaching example, not a medical device</p>
   <div class="server-notice" id="server-notice" hidden></div>
 
   <main class="main">
@@ -153,7 +192,7 @@ White Blood Cells: 14.0 K/uL, Lipase: 30.0 IU/L, ..."></textarea>
       <div class="block">
         <div class="block-label">Diagnostic evidence</div>
         <div class="bars" id="bars"></div>
-        <div class="axis"><div></div><div><span>0%</span><span>50%</span><span>100%</span></div><div></div></div>
+        <div class="axis"><div></div><div><span>0%</span><span>50%</span><span>100%</span></div></div>
       </div>
       <div class="card" id="card" aria-live="polite"></div>
       <div class="warnings" id="warnings" hidden></div>
@@ -162,14 +201,20 @@ White Blood Cells: 14.0 K/uL, Lipase: 30.0 IU/L, ..."></textarea>
 </div>
 
 <script>
-// Bar color gradient by value: light blue → blue → green
-const GRADIENT = [[0.0, [0xD4, 0xE7, 0xF4]], [0.35, [0x5F, 0xA3, 0xD3]], [0.7, [0x1F, 0x6E, 0x9C]], [1.0, [0x1F, 0x7F, 0x50]]];
+// Bar color gradient by value: light blue → blue → green, read from the --bar-* tokens (they change in dark mode)
+const STOPS = [0.0, 0.35, 0.7, 1.0];
+const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.trim().slice(i, i + 2), 16));
+const gradient = () => {
+  const css = getComputedStyle(document.documentElement);
+  return STOPS.map((x, i) => [x, hexToRgb(css.getPropertyValue("--bar-" + i))]);
+};
 const field = document.getElementById("case");
 let CONFIG = null, request = 0, timer = null;
 
 const pct = (p, digits = 1) => (p * 100).toFixed(digits) + "%";
 
 function color(v) {
+  const GRADIENT = gradient();
   for (let i = 1; i < GRADIENT.length; i++) {
     const [x1, c1] = GRADIENT[i - 1], [x2, c2] = GRADIENT[i];
     if (v <= x2) {
@@ -177,7 +222,7 @@ function color(v) {
       return `rgb(${c1.map((c, k) => Math.round(c + t * (c2[k] - c))).join(",")})`;
     }
   }
-  return "rgb(31,127,80)";
+  return `rgb(${GRADIENT[GRADIENT.length - 1][1].join(",")})`;
 }
 
 // Creates the 4 rows once; afterwards only width, color and value change (the CSS transition makes the bars "grow")
@@ -187,9 +232,9 @@ function buildBars() {
     const name = document.createElement("div"); name.className = "name"; name.textContent = CONFIG.labels[c];
     const track = document.createElement("div"); track.className = "track";
     const bar = document.createElement("div"); bar.className = "bar"; bar.id = "bar-" + c;
-    track.appendChild(bar);
-    const value = document.createElement("div"); value.className = "value"; value.id = "value-" + c;
-    target.append(name, track, value);
+    const value = document.createElement("span"); value.className = "value"; value.id = "value-" + c;
+    track.append(bar, value);
+    target.append(name, track);
   }
 }
 
@@ -207,8 +252,6 @@ function drawBars(r) {
   }
 }
 
-const chips = () => `<div class="chips"><span class="chip">Generated tokens: <b>0</b></span></div>`;
-
 // Only numbers and fixed labels go in as HTML; the user's text always goes in through textContent
 function drawCard(r) {
   const card = document.getElementById("card");
@@ -225,7 +268,7 @@ function drawCard(r) {
       `<div class="progress"><div style="width:${(100 * r.record_tokens / r.min_tokens).toFixed(0)}%"></div></div>` +
       `<p><b>${missing} tokens</b> to go (about ${Math.floor(missing * 3 / 4)} words). Laya switches on when the ` +
       `record is long enough; the count includes the section titles and the <i>Not documented.</i> placeholders ` +
-      `of empty sections. No inference runs before that.</p>` + chips();
+      `of empty sections. No inference runs before that.</p>`;
     return;
   }
   if (r.state === "out_of_scope") {
@@ -243,14 +286,18 @@ function drawCard(r) {
     return;
   }
   const b = r.budget, ps = r.p_surgical;
-  const rows = [["Evidence (bars)", `${pct(r.evidence[r.leader])} = probability × case understanding`]];
-  if (r.recalibrated) rows.push(["Laya without recalibration",
-                                 `${CONFIG.labels[r.original_leader]} ${pct(r.original[r.original_leader])}`]);
-  rows.push(["Management" + (r.recalibrated ? " (not recalibrated)" : ""),
-             `${ps >= 0.5 ? "Surgical" : "Conservative"} · P(surgical) ${pct(ps)}`],
-            ["Tokens read", `${b.sequence_tokens} / ${CONFIG.max_len} (question ${b.head_tokens} + record ` +
-                            `${b.record_tokens_used})`],
-            ["Inference", `${r.ms.toFixed(0)} ms`]);
+  // [label, value, tooltip of the label]
+  const surgical = ps >= 0.5;
+  const rows = [["Management", `<span class="pill ${surgical ? "surgical" : "conservative"}">` +
+                 `${surgical ? "Surgical" : "Conservative"}</span>P(surgical) ${pct(ps)}`,
+                 r.recalibrated ? "Second question of the model; not recalibrated" : ""],
+                ["Bar value", `${pct(r.evidence[r.leader])}`, "Evidence = probability × case understanding"]];
+  if (r.recalibrated) rows.push(["Before recalibration",
+                                 `${CONFIG.labels[r.original_leader]} ${pct(r.original[r.original_leader])}`,
+                                 "Laya output without the recalibration for partial cases"]);
+  rows.push(["Tokens read", `${b.sequence_tokens} / ${CONFIG.max_len}`,
+             `Question ${b.head_tokens} + record ${b.record_tokens_used} tokens`],
+            ["Inference", `${r.ms.toFixed(0)} ms`, "Scope detector + Laya; the encoder reads, it generates no text"]);
   card.className = "card result";
   card.innerHTML =
     `<div class="kicker">Most likely diagnosis</div>` +
@@ -258,9 +305,9 @@ function drawCard(r) {
     `<div class="sub">Probability${r.recalibrated ? " (recalibrated for partial cases)" : ""} · ` +
     `case understanding ${pct(r.understanding, 0)}</div>` +
     `<div class="progress"><div style="width:${(r.understanding * 100).toFixed(0)}%"></div></div>` +
-    `<table>${rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("")}</table>` +
-    (b.truncated ? `<p class="alert">Text over budget: ${b.tokens_dropped} record tokens were truncated.</p>` : "") +
-    chips();
+    `<table>${rows.map(([k, v, tip]) => `<tr><td${tip ? ` title="${tip}"` : ""}>${k}</td><td>${v}</td></tr>`)
+                  .join("")}</table>` +
+    (b.truncated ? `<p class="alert">Text over budget: ${b.tokens_dropped} record tokens were truncated.</p>` : "");
 }
 
 function drawWarnings(w) {
