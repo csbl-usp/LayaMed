@@ -1,6 +1,6 @@
 # 4. Inference in Python
 
-[← 3. Fine-tuning](03-fine-tuning.md) · [Guide index](../README.md#step-by-step-guide) · [5. Scope and recalibration →](05-scope-and-recalibration.md)
+[← 3. Fine-tuning](03-fine-tuning.md) · [Guide index](../README.md#-step-by-step-guide) · [5. Scope and recalibration →](05-scope-and-recalibration.md)
 
 ```python
 import torch                      # before numpy (see the OpenMP note in 01-environment.md)
@@ -58,4 +58,4 @@ On an RTX 4060 Laptop (bf16): ~40 ms per case, ~50 ms per full interface analysi
 
 ---
 
-[← 3. Fine-tuning](03-fine-tuning.md) · [Guide index](../README.md#step-by-step-guide) · [5. Scope and recalibration →](05-scope-and-recalibration.md)
+[← 3. Fine-tuning](03-fine-tuning.md) · [Guide index](../README.md#-step-by-step-guide) · [5. Scope and recalibration →](05-scope-and-recalibration.md)

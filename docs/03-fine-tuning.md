@@ -1,6 +1,6 @@
 # 3. Fine-tuning
 
-[← 2. Data](02-data.md) · [Guide index](../README.md#step-by-step-guide) · [4. Inference →](04-inference.md)
+[← 2. Data](02-data.md) · [Guide index](../README.md#-step-by-step-guide) · [4. Inference →](04-inference.md)
 
 Everything is in cells 3a–3c of `notebooks/layamed_colab.ipynb`.
 
@@ -80,4 +80,4 @@ Cell 4 measures, on the test set, the accuracy and the mean probability of the r
 
 ---
 
-[← 2. Data](02-data.md) · [Guide index](../README.md#step-by-step-guide) · [4. Inference →](04-inference.md)
+[← 2. Data](02-data.md) · [Guide index](../README.md#-step-by-step-guide) · [4. Inference →](04-inference.md)

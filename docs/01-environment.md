@@ -1,6 +1,6 @@
 # 1. Environment
 
-[← 0. Overview](00-overview.md) · [Guide index](../README.md#step-by-step-guide) · [2. Data →](02-data.md)
+[← 0. Overview](00-overview.md) · [Guide index](../README.md#-step-by-step-guide) · [2. Data →](02-data.md)
 
 ## Option A: Google Colab
 
@@ -63,4 +63,4 @@ The `laya` package changes often, and the version affects how the sequence is bu
 
 ---
 
-[← 0. Overview](00-overview.md) · [Guide index](../README.md#step-by-step-guide) · [2. Data →](02-data.md)
+[← 0. Overview](00-overview.md) · [Guide index](../README.md#-step-by-step-guide) · [2. Data →](02-data.md)

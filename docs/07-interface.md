@@ -1,6 +1,6 @@
 # 7. Interface (`web/index.html`)
 
-[← 6. Service and server](06-server.md) · [Guide index](../README.md#step-by-step-guide) · [8. Run on your computer →](08-run-locally.md)
+[← 6. Service and server](06-server.md) · [Guide index](../README.md#-step-by-step-guide) · [8. Run on your computer →](08-run-locally.md)
 
 ![LayaMed interface](img/interface.jpg)
 
@@ -72,4 +72,4 @@ for (const word of ex.text.match(/\S+\s*/g) || []) {
 
 ---
 
-[← 6. Service and server](06-server.md) · [Guide index](../README.md#step-by-step-guide) · [8. Run on your computer →](08-run-locally.md)
+[← 6. Service and server](06-server.md) · [Guide index](../README.md#-step-by-step-guide) · [8. Run on your computer →](08-run-locally.md)

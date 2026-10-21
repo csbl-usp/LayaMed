@@ -1,6 +1,6 @@
 # 5. Scope detector and recalibration
 
-[← 4. Inference](04-inference.md) · [Guide index](../README.md#step-by-step-guide) · [6. Service and server →](06-server.md)
+[← 4. Inference](04-inference.md) · [Guide index](../README.md#-step-by-step-guide) · [6. Service and server →](06-server.md)
 
 ## The problem
 
@@ -58,4 +58,4 @@ The decision to use it is taken on validation too, never on test: the notebook f
 
 ---
 
-[← 4. Inference](04-inference.md) · [Guide index](../README.md#step-by-step-guide) · [6. Service and server →](06-server.md)
+[← 4. Inference](04-inference.md) · [Guide index](../README.md#-step-by-step-guide) · [6. Service and server →](06-server.md)

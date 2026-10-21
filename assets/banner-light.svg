@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 340" width="1280" height="340" role="img" aria-label="LayaMed: diagnostic evidence while you write a clinical case">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7FBF9"/><stop offset="1" stop-color="#EAF2F8"/></linearGradient>
+    <linearGradient id="lm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E9461"/><stop offset="1" stop-color="#1F6E9C"/></linearGradient>
+    <linearGradient id="tr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2E9461" stop-opacity="0"/><stop offset="0.25" stop-color="#2E9461"/><stop offset="1" stop-color="#1F6E9C"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#D7EADD"/><stop offset="1" stop-color="#D7EADD" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect x="1" y="1" width="1278" height="338" rx="24" fill="url(#bg)" stroke="#D6E2DB"/>
+  <circle cx="1050" cy="165" r="210" fill="url(#glow)"/>
+  <path d="M890,170 L940,170 L958,132 L980,232 L1003,96 L1026,200 L1044,170 L1096,170 L1112,148 L1128,186 L1144,170 L1182,170" fill="none" stroke="url(#tr)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="1202" cy="170" r="9" fill="#1F6E9C"/>
+  <g transform="translate(60,58) scale(1.5)">
+    <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#lm)"/>
+    <polyline points="11,36 21,36 26,24 32,46 37,29 41,36 47,36" fill="none" stroke="#FFFFFF" stroke-width="4.2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="52" cy="36" r="4.2" fill="#FFFFFF"/>
+  </g>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+    <text x="176" y="122" font-size="64" font-weight="700" letter-spacing="-1" fill="#1F6E9C">Laya<tspan fill="#1E7048">Med</tspan></text>
+    <text x="64" y="194" font-size="24" fill="#1F2D2A">Diagnostic evidence that updates <tspan font-weight="700">while you write</tspan> a clinical case</text>
+    <rect x="64" y="232" width="137" height="34" rx="17" fill="#FFFFFF" stroke="#D6E2DB"/><text x="133" y="254" text-anchor="middle" font-size="16" fill="#1F2D2A">Appendicitis</text><rect x="211.2" y="232" width="147" height="34" rx="17" fill="#FFFFFF" stroke="#D6E2DB"/><text x="285" y="254" text-anchor="middle" font-size="16" fill="#1F2D2A">Cholecystitis</text><rect x="368.0" y="232" width="137" height="34" rx="17" fill="#FFFFFF" stroke="#D6E2DB"/><text x="437" y="254" text-anchor="middle" font-size="16" fill="#1F2D2A">Pancreatitis</text><rect x="515.2" y="232" width="156" height="34" rx="17" fill="#FFFFFF" stroke="#D6E2DB"/><text x="593" y="254" text-anchor="middle" font-size="16" fill="#1F2D2A">Diverticulitis</text>
+    <text x="64" y="300" font-size="15" fill="#5B6B66">Fine-tuned Laya encoder · ~50 ms per analysis · runs locally · teaching example, not a medical device</text>
+  </g>
+</svg>

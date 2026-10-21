@@ -1,6 +1,6 @@
 # 0. Overview
 
-[Guide index](../README.md#step-by-step-guide) · [1. Environment →](01-environment.md)
+[Guide index](../README.md#-step-by-step-guide) · [1. Environment →](01-environment.md)
 
 ## What LayaMed shows
 
@@ -47,4 +47,4 @@ The price: the model is **closed on its training options**. It cannot say "anoth
 
 ---
 
-[Guide index](../README.md#step-by-step-guide) · [1. Environment →](01-environment.md)
+[Guide index](../README.md#-step-by-step-guide) · [1. Environment →](01-environment.md)

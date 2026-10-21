@@ -1,6 +1,6 @@
 # 6. Service and server
 
-[← 5. Scope and recalibration](05-scope-and-recalibration.md) · [Guide index](../README.md#step-by-step-guide) · [7. Interface →](07-interface.md)
+[← 5. Scope and recalibration](05-scope-and-recalibration.md) · [Guide index](../README.md#-step-by-step-guide) · [7. Interface →](07-interface.md)
 
 ## `layamed/service.py`
 
@@ -73,4 +73,4 @@ Invoke-RestMethod -Uri http://127.0.0.1:8000/api/analyze -Method Post -ContentTy
 
 ---
 
-[← 5. Scope and recalibration](05-scope-and-recalibration.md) · [Guide index](../README.md#step-by-step-guide) · [7. Interface →](07-interface.md)
+[← 5. Scope and recalibration](05-scope-and-recalibration.md) · [Guide index](../README.md#-step-by-step-guide) · [7. Interface →](07-interface.md)

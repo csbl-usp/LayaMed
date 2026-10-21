@@ -1,6 +1,6 @@
 # 8. Run on your computer
 
-[← 7. Interface](07-interface.md) · [Guide index](../README.md#step-by-step-guide) · [9. Limitations →](09-limitations.md)
+[← 7. Interface](07-interface.md) · [Guide index](../README.md#-step-by-step-guide) · [9. Limitations →](09-limitations.md)
 
 ## 1. Environment
 
@@ -68,4 +68,4 @@ Remove-NetFirewallRule -DisplayName "LayaMed 8000"
 
 ---
 
-[← 7. Interface](07-interface.md) · [Guide index](../README.md#step-by-step-guide) · [9. Limitations →](09-limitations.md)
+[← 7. Interface](07-interface.md) · [Guide index](../README.md#-step-by-step-guide) · [9. Limitations →](09-limitations.md)

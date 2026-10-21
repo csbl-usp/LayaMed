@@ -1,6 +1,6 @@
 # 9. Limitations
 
-[← 8. Run on your computer](08-run-locally.md) · [Guide index](../README.md#step-by-step-guide)
+[← 8. Run on your computer](08-run-locally.md) · [Guide index](../README.md#-step-by-step-guide)
 
 ## What LayaMed does not do
 
@@ -26,4 +26,4 @@
 
 ---
 
-[← 8. Run on your computer](08-run-locally.md) · [Guide index](../README.md#step-by-step-guide)
+[← 8. Run on your computer](08-run-locally.md) · [Guide index](../README.md#-step-by-step-guide)

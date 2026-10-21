@@ -1,6 +1,6 @@
 # 2. Data
 
-[← 1. Environment](01-environment.md) · [Guide index](../README.md#step-by-step-guide) · [3. Fine-tuning →](03-fine-tuning.md)
+[← 1. Environment](01-environment.md) · [Guide index](../README.md#-step-by-step-guide) · [3. Fine-tuning →](03-fine-tuning.md)
 
 ## Input format
 
@@ -73,4 +73,4 @@ If the data come from a database with a usage agreement (for example, MIMIC unde
 
 ---
 
-[← 1. Environment](01-environment.md) · [Guide index](../README.md#step-by-step-guide) · [3. Fine-tuning →](03-fine-tuning.md)
+[← 1. Environment](01-environment.md) · [Guide index](../README.md#-step-by-step-guide) · [3. Fine-tuning →](03-fine-tuning.md)
