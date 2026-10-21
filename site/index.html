@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LayaMed · diagnostic evidence while you write</title>
+<meta name="description" content="A step-by-step guide to fine-tune Laya on 4 acute abdominal diseases and serve it with a live local interface. Teaching example, not a medical device.">
+<meta property="og:title" content="LayaMed">
+<meta property="og:description" content="Diagnostic evidence that updates while you write a clinical case.">
+<meta property="og:image" content="https://raw.githubusercontent.com/csbl-usp/LayaMed/main/docs/img/social-preview.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232E9461'/%3E%3Cstop offset='1' stop-color='%231F6E9C'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='60' height='60' rx='16' fill='url(%23g)'/%3E%3Cpolyline points='11,36 21,36 26,24 32,46 37,29 41,36 47,36' fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='52' cy='36' r='4.2' fill='%23fff'/%3E%3C/svg%3E">
+<!-- Project page for GitHub Pages: one file, no external scripts, fonts or CDN. It runs no model: the live demo shows
+     how a case is split and cleaned (a simplified port of layamed/inference.py), never a probability. -->
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #F7FAF8; --surface: #FFFFFF; --surface-2: #F1F6F3; --ink: #15211E; --ink-soft: #55655F;
+    --line: #DDE7E1; --blue: #1F6E9C; --green: #2E9461; --green-ink: #1E7048; --blue-ink: #1B5F87;
+    --mask: #8A4B12; --mask-bg: #FBEFE3; --drop: #9AA8A3; --glow-1: rgba(46, 148, 97, .16); --glow-2: rgba(31, 110, 156, .14);
+    --shadow: 0 1px 2px rgba(16, 40, 30, .05), 0 8px 28px rgba(16, 40, 30, .07);
+    --ease: cubic-bezier(.22, .8, .24, 1);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0E1412; --surface: #151D1A; --surface-2: #1A2420; --ink: #E4ECE8; --ink-soft: #9DB0A9;
+    --line: #26332E; --blue: #6FB3E0; --green: #3FA872; --green-ink: #5CC08C; --blue-ink: #8CC4EA;
+    --mask: #F0B27A; --mask-bg: #35261A; --drop: #5E6E68; --glow-1: rgba(63, 168, 114, .18); --glow-2: rgba(111, 179, 224, .14);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 32px rgba(0, 0, 0, .35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0E1412; --surface: #151D1A; --surface-2: #1A2420; --ink: #E4ECE8; --ink-soft: #9DB0A9;
+      --line: #26332E; --blue: #6FB3E0; --green: #3FA872; --green-ink: #5CC08C; --blue-ink: #8CC4EA;
+      --mask: #F0B27A; --mask-bg: #35261A; --drop: #5E6E68; --glow-1: rgba(63, 168, 114, .18); --glow-2: rgba(111, 179, 224, .14);
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 32px rgba(0, 0, 0, .35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.55;
+         font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+         transition: background-color .4s var(--ease), color .4s var(--ease); overflow-x: hidden; }
+  a { color: var(--blue-ink); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 6px; }
+
+  /* Slow-moving glow behind the page */
+  .aurora { position: fixed; inset: -20vmax; z-index: -1; pointer-events: none; filter: blur(60px); opacity: .9; }
+  .aurora i { position: absolute; width: 46vmax; height: 46vmax; border-radius: 50%; }
+  .aurora i:nth-child(1) { background: var(--glow-1); top: 8%; left: 10%; animation: drift1 26s ease-in-out infinite alternate; }
+  .aurora i:nth-child(2) { background: var(--glow-2); top: 30%; right: 6%; animation: drift2 32s ease-in-out infinite alternate; }
+  @keyframes drift1 { to { transform: translate(14vmax, 10vmax) scale(1.15); } }
+  @keyframes drift2 { to { transform: translate(-12vmax, -8vmax) scale(.9); } }
+
+  /* Top bar */
+  .bar { position: sticky; top: 0; z-index: 10; backdrop-filter: saturate(1.4) blur(14px);
+         background: color-mix(in srgb, var(--bg) 72%, transparent); border-bottom: 1px solid transparent;
+         transition: border-color .3s var(--ease); }
+  .bar.scrolled { border-bottom-color: var(--line); }
+  .bar .wrap { display: flex; align-items: center; gap: 18px; height: 62px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 19px; color: var(--ink); }
+  .brand:hover { text-decoration: none; }
+  .brand svg { width: 30px; height: 30px; }
+  .brand b { color: var(--blue); } .brand b + b { color: var(--green-ink); }
+  .bar nav { margin-left: auto; display: flex; gap: 22px; font-size: 15px; }
+  .bar nav a { color: var(--ink-soft); }
+  .bar nav a:hover { color: var(--ink); text-decoration: none; }
+  .theme { border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: 36px; height: 36px;
+           border-radius: 50%; display: grid; place-items: center; cursor: pointer; transition: transform .3s var(--ease); }
+  .theme:hover { transform: rotate(-18deg); }
+  .theme svg { width: 18px; height: 18px; }
+
+  /* Hero */
+  .hero { padding: 92px 0 64px; text-align: center; }
+  .hero .logo { width: 88px; height: 88px; margin: 0 auto 22px; display: block; filter: drop-shadow(0 10px 24px var(--glow-2)); }
+  .trace { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 2.2s .25s var(--ease) forwards; }
+  .pulse { transform-box: fill-box; transform-origin: center; transform: scale(0); animation: pop .5s 2.1s var(--ease) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { 60% { transform: scale(1.35); } to { transform: scale(1); } }
+  h1 { font-size: clamp(40px, 7vw, 76px); line-height: 1.02; letter-spacing: -0.035em; margin: 0; }
+  h1 .grad { background: linear-gradient(100deg, var(--blue) 10%, var(--green) 90%); -webkit-background-clip: text;
+             background-clip: text; color: transparent; }
+  .lead { font-size: clamp(17px, 2.2vw, 21px); color: var(--ink-soft); max-width: 640px; margin: 20px auto 0; }
+  .cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 999px; font-weight: 600;
+         font-size: 15px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+         transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s; }
+  .btn:hover { text-decoration: none; transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--green); }
+  .btn.primary { background: linear-gradient(100deg, var(--green), var(--blue)); color: #FFFFFF; border-color: transparent; }
+  .btn.primary:hover { box-shadow: 0 10px 30px var(--glow-2); }
+  .btn svg { width: 17px; height: 17px; }
+  .note { margin-top: 26px; font-size: 13px; color: var(--ink-soft); }
+  .note span { display: inline-block; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; }
+
+  section { padding: 72px 0; scroll-margin-top: 40px; }
+  .kicker { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--green-ink); font-weight: 700; }
+  h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.02em; line-height: 1.15; margin: 8px 0 10px; }
+  .sub { color: var(--ink-soft); max-width: 640px; margin: 0 0 34px; font-size: 17px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
+
+  /* Live demo: a fictional case typed word by word; on the right, what Laya would read */
+  .demo { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+  .pane { padding: 22px 24px; min-height: 430px; }
+  .pane + .pane { border-left: 1px solid var(--line); background: var(--surface-2); }
+  .pane h3 { margin: 0 0 14px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft);
+             display: flex; align-items: center; gap: 8px; }
+  .dotlive { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 var(--glow-1);
+             animation: live 1.6s ease-out infinite; }
+  @keyframes live { to { box-shadow: 0 0 0 10px transparent; } }
+  #typed { white-space: pre-wrap; font-size: 15px; min-height: 340px; }
+  #typed .title { font-weight: 700; color: var(--blue-ink); }
+  .caret { display: inline-block; width: 2px; height: 1.1em; background: var(--green); vertical-align: -2px; margin-left: 1px;
+           animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  #model { font: 13.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; margin: 0; }
+  #model .sec { color: var(--blue-ink); font-weight: 700; }
+  #model .empty { color: var(--drop); font-style: italic; }
+  #model .mask { color: var(--mask); background: var(--mask-bg); border-radius: 4px; padding: 0 3px; }
+  #model .fresh { animation: fresh .9s var(--ease); }
+  @keyframes fresh { from { background: var(--glow-1); } to { background: transparent; } }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 16px; font-size: 13px; color: var(--ink-soft); }
+  .legend .mask { color: var(--mask); background: var(--mask-bg); border-radius: 4px; padding: 0 4px; }
+  .legend s { color: var(--drop); }
+  #dropped { margin-top: 12px; font-size: 13px; color: var(--ink-soft); min-height: 20px; }
+  #dropped s { color: var(--drop); }
+  .demo-foot { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 24px;
+               border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); }
+  .replay { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 14px;
+            font: inherit; cursor: pointer; transition: border-color .2s; }
+  .replay:hover { border-color: var(--green); }
+  .progress { flex: 1; max-width: 240px; height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--green), var(--blue));
+                transition: width .2s linear; }
+
+  /* Highlights: cards with a soft light that follows the pointer */
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .feat { padding: 24px 22px; position: relative; overflow: hidden; transition: transform .35s var(--ease), border-color .35s; }
+  .feat::before { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .35s;
+                  background: radial-gradient(260px circle at var(--x, 50%) var(--y, 50%), var(--glow-1), transparent 70%); }
+  .feat:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--green) 45%, var(--line)); }
+  .feat:hover::before { opacity: 1; }
+  .feat > * { position: relative; }
+  .feat .ic { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; margin-bottom: 16px;
+              background: linear-gradient(135deg, #2E9461, #1F6E9C); }
+  .feat .ic svg { width: 24px; height: 24px; }
+  .feat h3 { margin: 0 0 6px; font-size: 17px; }
+  .feat p { margin: 0; color: var(--ink-soft); font-size: 14.5px; }
+
+  /* Pipeline: steps advance by themselves; click one to read it */
+  .pipe { display: grid; grid-template-columns: 300px 1fr; gap: 0; overflow: hidden; }
+  .steps { list-style: none; margin: 0; padding: 14px; border-right: 1px solid var(--line); }
+  .steps button { width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; padding: 11px 12px;
+                  border: 0; background: transparent; color: var(--ink-soft); font: inherit; font-size: 15px; border-radius: 12px;
+                  cursor: pointer; position: relative; transition: background .3s var(--ease), color .3s; }
+  .steps button:hover { background: var(--surface-2); color: var(--ink); }
+  .steps button .n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px;
+                     font-weight: 700; border: 1px solid var(--line); flex-shrink: 0; transition: all .3s var(--ease); }
+  .steps button[aria-selected="true"] { background: var(--surface-2); color: var(--ink); font-weight: 600; }
+  .steps button[aria-selected="true"] .n { background: linear-gradient(135deg, var(--green), var(--blue)); color: #FFF;
+                                           border-color: transparent; }
+  .steps button[aria-selected="true"]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 4px; height: 2px;
+                                               border-radius: 2px; background: var(--green); transform-origin: left;
+                                               animation: fill var(--step-ms, 4200ms) linear forwards; opacity: .5; }
+  .pipe.paused .steps button::after { animation-play-state: paused; }
+  @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .detail { padding: 34px 36px; position: relative; min-height: 330px; }
+  .detail article { position: absolute; inset: 34px 36px; opacity: 0; transform: translateY(10px);
+                    transition: opacity .45s var(--ease), transform .45s var(--ease); pointer-events: none; }
+  .detail article.on { opacity: 1; transform: none; pointer-events: auto; }
+  .detail .tag { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--green-ink);
+                 background: var(--surface-2); border: 1px solid var(--line); padding: 3px 8px; border-radius: 8px; }
+  .detail h3 { font-size: 24px; margin: 14px 0 8px; letter-spacing: -0.01em; }
+  .detail p { color: var(--ink-soft); margin: 0 0 12px; max-width: 560px; }
+  .detail code { font-size: 13.5px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+
+  /* Guide */
+  .guide { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .doc { padding: 18px 18px 20px; color: var(--ink); display: block; transition: transform .3s var(--ease), border-color .3s; }
+  .doc:hover { text-decoration: none; transform: translateY(-3px); border-color: color-mix(in srgb, var(--blue) 45%, var(--line)); }
+  .doc .num { font: 700 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--green-ink); }
+  .doc b { display: block; margin: 6px 0 4px; font-size: 15.5px; }
+  .doc span { color: var(--ink-soft); font-size: 13.5px; line-height: 1.45; display: block; }
+  .doc .arrow { display: inline-block; transition: transform .3s var(--ease); }
+  .doc:hover .arrow { transform: translateX(4px); }
+
+  /* Start */
+  .start { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .start .card { padding: 26px; }
+  .start h3 { margin: 0 0 10px; }
+  .start ol { margin: 0; padding-left: 20px; color: var(--ink-soft); }
+  .start li { margin: 6px 0; }
+  pre.cmd { margin: 12px 0 0; padding: 14px 16px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line);
+            font: 13.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-x: auto; }
+
+  footer { padding: 48px 0 60px; color: var(--ink-soft); font-size: 14px; text-align: center; }
+  footer .warn { max-width: 680px; margin: 0 auto 18px; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--line);
+                 background: var(--surface); }
+
+  /* Reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  .reveal.d1 { transition-delay: .08s; } .reveal.d2 { transition-delay: .16s; } .reveal.d3 { transition-delay: .24s; }
+
+  @media (max-width: 960px) {
+    .grid4 { grid-template-columns: repeat(2, 1fr); }
+    .guide { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .wrap { padding: 0 16px; }
+    .bar nav { display: none; }
+    .theme { margin-left: auto; }
+    .hero { padding: 64px 0 40px; }
+    .demo, .pipe, .start { grid-template-columns: 1fr; }
+    .pane + .pane { border-left: 0; border-top: 1px solid var(--line); }
+    .pane { min-height: 0; }
+    #typed { min-height: 260px; }
+    .steps { border-right: 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; }
+    .detail { min-height: 360px; padding: 24px 20px; }
+    .detail article { inset: 24px 20px; }
+    .grid4 { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+                             transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i></i><i></i></div>
+
+<header class="bar" id="bar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="LayaMed, back to top">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E9461"/><stop offset="1" stop-color="#1F6E9C"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g1)"/><polyline points="11,36 21,36 26,24 32,46 37,29 41,36 47,36" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="52" cy="36" r="4.2" fill="#fff"/></svg>
+      <span><b>Laya</b><b>Med</b></span>
+    </a>
+    <nav aria-label="Sections">
+      <a href="#demo">Demo</a><a href="#how">How it works</a><a href="#guide">Guide</a><a href="#start">Start</a>
+      <a href="https://github.com/csbl-usp/LayaMed">GitHub</a>
+    </nav>
+    <button class="theme" id="theme" type="button" aria-label="Switch light or dark theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E9461"/><stop offset="1" stop-color="#1F6E9C"/></linearGradient></defs>
+        <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g2)"/>
+        <polyline class="trace" pathLength="1" points="11,36 21,36 26,24 32,46 37,29 41,36 47,36" fill="none" stroke="#fff"
+                  stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle class="pulse" cx="52" cy="36" r="4.2" fill="#fff"/>
+      </svg>
+      <h1 class="reveal">Diagnostic evidence<br><span class="grad">while you write</span></h1>
+      <p class="lead reveal d1">LayaMed fine-tunes a Laya encoder on four acute abdominal diseases and shows its evidence live, on
+        every pause in typing. This is the step-by-step guide to build it, from data to interface.</p>
+      <div class="cta reveal d2">
+        <a class="btn primary" href="https://colab.research.google.com/github/csbl-usp/LayaMed/blob/main/notebooks/layamed_colab.ipynb">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg>
+          Open in Colab</a>
+        <a class="btn" href="https://github.com/csbl-usp/LayaMed">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.4 1.1 3 .8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7 3.6 3.6 0 0 1 .1-2.7s.8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.8V21c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg>
+          View on GitHub</a>
+        <a class="btn" href="#guide">Read the guide</a>
+      </div>
+      <p class="note reveal d3"><span>Synthetic cases · teaching example · not a medical device</span></p>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="wrap">
+      <div class="kicker reveal">Live demo</div>
+      <h2 class="reveal">Watch a case being written</h2>
+      <p class="sub reveal">On the left, a fictional case typed word by word. On the right, the text Laya reads, rebuilt as you go:
+        sections split by their titles, imaging sentences dropped, disease and surgery names masked. This page runs no
+        model and shows no probability.</p>
+      <div class="card demo reveal">
+        <div class="pane">
+          <h3><span class="dotlive" aria-hidden="true"></span>Clinical case</h3>
+          <div id="typed" aria-live="off"></div>
+        </div>
+        <div class="pane">
+          <h3>What Laya reads</h3>
+          <pre id="model"></pre>
+          <div id="dropped"></div>
+          <div class="legend"><span><span class="mask">[redacted]</span> masked name</span><span><s>sentence</s> dropped (imaging)</span><span>“Not documented.” empty section</span></div>
+        </div>
+        <div class="demo-foot">
+          <span>Simplified preview of <code>layamed/inference.py</code></span>
+          <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+          <button class="replay" id="replay" type="button">Replay</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker reveal">Highlights</div>
+      <h2 class="reveal">Small model, careful edges</h2>
+      <p class="sub reveal">An encoder that reads the whole case at once is fast enough to follow typing. The rest of the design
+        is about not saying more than it knows.</p>
+      <div class="grid4">
+        <div class="card feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h4l2-6 4 12 2-6h6"/></svg></div>
+          <h3>Live while typing</h3><p>One analysis takes about 50 ms on a laptop GPU, so the bars update on every pause.</p></div>
+        <div class="card feat reveal d1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Out-of-scope guard</h3><p>A recipe or a news story gets no probability instead of a forced diagnosis.</p></div>
+        <div class="card feat reveal d2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 0 1 16 0"/><path d="M12 17l4-5"/></svg></div>
+          <h3>Calibrated as you write</h3><p>Probabilities stay moderate while the case is incomplete and grow with exam and labs.</p></div>
+        <div class="card feat reveal d3"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+          <h3>Runs locally</h3><p>A plain HTML page and a FastAPI server on your machine. No CDN; nothing leaves it.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="kicker reveal">How it works</div>
+      <h2 class="reveal">From a pause in typing to the bars</h2>
+      <p class="sub reveal">Seven steps run on every pause. Pick one to read it; they also advance by themselves.</p>
+      <div class="card pipe reveal" id="pipe">
+        <div class="steps" role="tablist" aria-label="Pipeline steps" id="steps"></div>
+        <div class="detail" id="detail"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="guide">
+    <div class="wrap">
+      <div class="kicker reveal">Step-by-step guide</div>
+      <h2 class="reveal">Ten short chapters</h2>
+      <p class="sub reveal">Each one is a page in the repository, in the order you build LayaMed.</p>
+      <div class="guide" id="docs"></div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="wrap">
+      <div class="kicker reveal">Get started</div>
+      <h2 class="reveal">Two ways in</h2>
+      <div class="start">
+        <div class="card reveal">
+          <h3>On Colab</h3>
+          <ol>
+            <li>Open the notebook: <a href="https://colab.research.google.com/github/csbl-usp/LayaMed/blob/main/notebooks/layamed_colab.ipynb">layamed_colab.ipynb</a></li>
+            <li><b>Runtime → Change runtime type → GPU</b> (a T4 is enough)</li>
+            <li>Run the cells in order: it trains on synthetic cases and opens the interface inside Colab, in about 30 minutes.</li>
+          </ol>
+        </div>
+        <div class="card reveal d1">
+          <h3>On your computer</h3>
+          <ol><li>Set up the environment (<a href="https://github.com/csbl-usp/LayaMed/blob/main/docs/01-environment.md">guide</a>) and put the trained checkpoint in <code>checkpoint/</code>.</li>
+              <li>Start the server and open <b>http://127.0.0.1:8000</b>.</li></ol>
+          <pre class="cmd">conda activate layamed
+python server.py</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="warn reveal"><b>Not a medical device.</b> The example trains on rule-based synthetic cases with a teaching management
+      label: its numbers have no clinical value. No MIMIC data, weights or derived artifacts are in the repository.</p>
+    <p>Computational Systems Biology Laboratory (CSBL-USP) · <a href="https://github.com/csbl-usp/LayaMed/blob/main/LICENSE">MIT license</a> ·
+      <a href="https://github.com/csbl-usp/LayaMed/blob/main/CITATION.cff">Cite</a></p>
+  </div>
+</footer>
+
+<script>
+const REPO = "https://github.com/csbl-usp/LayaMed/blob/main/";
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ---------- Theme: system by default, toggle remembered on this device ----------
+const root = document.documentElement;
+try { const t = localStorage.getItem("layamed-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+document.getElementById("theme").addEventListener("click", () => {
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("layamed-theme", root.dataset.theme); } catch (e) {}
+});
+
+// ---------- Top bar border after scrolling; reveal on scroll ----------
+const bar = document.getElementById("bar");
+addEventListener("scroll", () => bar.classList.toggle("scrolled", scrollY > 8), {passive: true});
+const io = new IntersectionObserver(entries => entries.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+}), {threshold: 0.12});
+document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+// ---------- Light that follows the pointer on the highlight cards ----------
+document.querySelectorAll(".feat").forEach(card => card.addEventListener("pointermove", e => {
+  const r = card.getBoundingClientRect();
+  card.style.setProperty("--x", `${e.clientX - r.left}px`);
+  card.style.setProperty("--y", `${e.clientY - r.top}px`);
+}));
+
+// ---------- Live demo ----------
+// Simplified port of layamed/inference.py: titles at the start of a line split the sections; in history and exam,
+// sentences that mention imaging are dropped; disease and surgery names are masked. The server does more (post-op
+// clauses, organ warnings); this is only to show the idea.
+const CASE = `History of present illness:
+19-year-old woman with 18 hours of abdominal pain that started around the umbilicus and moved to the right lower quadrant. Associated with nausea, loss of appetite and subjective fevers. An ultrasound at the clinic was inconclusive. Her brother had an appendectomy last year.
+
+Physical examination:
+T 38.0 C, HR 102, BP 118/72. Focal tenderness in the right lower quadrant with rebound and voluntary guarding. Positive Rovsing sign.
+
+Labs:
+White Blood Cells: 14.6 K/uL, Neutrophils: 84.0 %, Lipase: 28.0 IU/L`;
+const TITLES = {hpi: "HISTORY OF PRESENT ILLNESS", pe: "PHYSICAL EXAMINATION", lab: "PERTINENT / ABNORMAL LABS"};
+const EMPTY = {hpi: "Not documented.", pe: "Not documented.", lab: "No abnormal labs reported."};
+const RE_TITLE = /^[ \t]*(?:(history of present illness|history|hpi)|(physical examination|physical exam|examination|exam|pe)|(pertinent\s*\/\s*abnormal labs|laboratory results|laboratory|labs|lab))[ \t]*:[ \t]*/gim;
+const RE_LEAK = /appendicit\w*|appendectom\w*|\bappy\b|cholecystit\w*|cholecystectom\w*|\bchole\b|pancreatit\w*|diverticulit\w*|sigmoidectom\w*|colectom\w*|\bhartmann'?s?\b/gi;
+const RE_IMAGING = /\b(?:CTA?|CAT\s+scan|computed\s+tomography|ultrasound\w*|ultrasonograph\w*|sonogra\w*|u\/s|MRI|MRCP|HIDA|ERCP|imaging|scans?|radiograph\w*|x-?rays?|KUB)\b/i;
+const esc = s => s.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]));
+
+function split(text) {
+  const out = {hpi: [], pe: [], lab: []};
+  let cur = "hpi", start = 0, m;
+  RE_TITLE.lastIndex = 0;
+  while ((m = RE_TITLE.exec(text))) {
+    out[cur].push(text.slice(start, m.index));
+    cur = m[1] ? "hpi" : m[2] ? "pe" : "lab";
+    start = RE_TITLE.lastIndex;
+  }
+  out[cur].push(text.slice(start));
+  for (const k in out) out[k] = out[k].map(s => s.trim()).filter(Boolean).join("\n");
+  return out;
+}
+
+function clean(text, section, dropped) {
+  let sentences = [text];
+  if (section !== "lab") {
+    sentences = text.split(/(?<=[.!?])\s+|\n+/).filter(s => s.trim());
+    sentences = sentences.filter(s => RE_IMAGING.test(s) ? (dropped.push(s), false) : true);
+  }
+  return sentences.map(s => esc(s).replace(RE_LEAK, '<span class="mask">[redacted]</span>')).join(" ");
+}
+
+const typedEl = document.getElementById("typed"), modelEl = document.getElementById("model");
+const droppedEl = document.getElementById("dropped"), prog = document.getElementById("prog");
+let lastModel = "";
+
+function render(text, done) {
+  // Left: the typed text with section titles highlighted
+  typedEl.innerHTML = esc(text).replace(/^(History of present illness|Physical examination|Labs):/gm, '<span class="title">$1:</span>') +
+                      (done ? "" : '<span class="caret"></span>');
+  // Right: the model input; a section that just changed flashes softly
+  const parts = split(text), dropped = [];
+  const html = Object.keys(TITLES).map(s => {
+    const body = parts[s] ? clean(parts[s], s, dropped) : "";
+    return `<span class="sec">${TITLES[s]}:</span>\n` + (body || `<span class="empty">${EMPTY[s]}</span>`);
+  }).join("\n\n");
+  if (html !== lastModel) { modelEl.innerHTML = html; lastModel = html; }
+  droppedEl.innerHTML = dropped.length ? "Dropped: " + dropped.map(s => `<s>${esc(s)}</s>`).join(" ") : "";
+}
+
+let run = 0;
+const wait = ms => new Promise(ok => setTimeout(ok, ms));
+async function play() {
+  const mine = ++run;
+  const words = CASE.match(/\S+\s*/g);
+  let text = "";
+  render("", false);
+  if (reduced) { render(CASE, true); prog.style.width = "100%"; return; }
+  for (let i = 0; i < words.length; i++) {
+    await wait(/\n\n$/.test(text) ? 520 : 70 + Math.random() * 60);
+    if (mine !== run) return;
+    text += words[i];
+    prog.style.width = `${(100 * (i + 1) / words.length).toFixed(1)}%`;
+    render(text, false);
+  }
+  render(text, true);
+  await wait(6000);
+  if (mine === run && demoVisible) play();  // loops while the demo is on screen
+}
+let demoVisible = false, started = false;
+new IntersectionObserver(([e]) => {
+  demoVisible = e.isIntersecting;
+  if (demoVisible && !started) { started = true; play(); }
+}, {threshold: 0.35}).observe(document.getElementById("demo"));
+document.getElementById("replay").addEventListener("click", () => { started = true; play(); });
+render("", false);
+
+// ---------- Pipeline steps ----------
+const STEPS = [
+  ["Write", "web/index.html", "Type the case in one field",
+   "On every pause in typing (120 ms), the page sends the text to the local server. Only one request is in flight; late answers to older text are discarded, so the screen never goes back."],
+  ["Split", "inference.split_free_text", "History, exam and labs",
+   "Titles at the start of a line (<code>Physical examination:</code>, <code>Labs:</code>…) separate the sections. Without titles, everything is history."],
+  ["Clean", "inference.build_text", "The training format, exactly",
+   "Imaging sentences and post-operative findings are dropped; disease and surgery names become <code>[redacted]</code>. An empty section becomes <code>Not documented.</code> Training and serving import the same module."],
+  ["Wait", "service.MIN_CONTEXT_TOKENS", "Enough context first",
+   "Below 100 record tokens (about 50 typed words) the model does not run at all: the interface shows how much is missing instead of a guess."],
+  ["Guard", "scope.ScopeDetector", "Does it look like a clinical case?",
+   "The text must sit close to the training cases in the encoder space (Mahalanobis distance) and contain clinical vocabulary. Otherwise: no diagnosis."],
+  ["Read", "laya.Agent", "One pass of the encoder",
+   "Laya reads question, options and record in one sequence of up to 2,048 tokens and returns one calibrated probability per option, for diagnosis and for management. It generates no text."],
+  ["Show", "recalibration.Recalibrator", "Moderate, then confident",
+   "An optional layer mixes the output with the class frequencies, with a weight that grows as history, exam and labs are written. Then the bars, the card and the warnings update."],
+];
+const stepsEl = document.getElementById("steps"), detailEl = document.getElementById("detail"), pipe = document.getElementById("pipe");
+const STEP_MS = 4200;
+pipe.style.setProperty("--step-ms", STEP_MS + "ms");
+STEPS.forEach(([name, tag, title, text], i) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.role = "tab"; b.id = "tab-" + i; b.setAttribute("aria-controls", "step-" + i);
+  b.innerHTML = `<span class="n">${i + 1}</span>${name}`;
+  b.addEventListener("click", () => { select(i); restart(); });
+  stepsEl.appendChild(b);
+  const a = document.createElement("article");
+  a.id = "step-" + i; a.setAttribute("role", "tabpanel"); a.setAttribute("aria-labelledby", "tab-" + i);
+  a.innerHTML = `<span class="tag">${tag}</span><h3>${title}</h3><p>${text}</p>`;
+  detailEl.appendChild(a);
+});
+let current = 0, timer = null;
+function select(i) {
+  current = i;
+  stepsEl.querySelectorAll("button").forEach((b, k) => {
+    b.setAttribute("aria-selected", k === i);
+    b.tabIndex = k === i ? 0 : -1;
+    if (k === i) { b.style.animation = "none"; b.offsetWidth; b.style.animation = ""; }  // restart the progress line
+  });
+  detailEl.querySelectorAll("article").forEach((a, k) => a.classList.toggle("on", k === i));
+}
+function restart() {
+  clearInterval(timer);
+  if (!reduced) timer = setInterval(() => { if (!pipe.matches(":hover")) select((current + 1) % STEPS.length); }, STEP_MS);
+}
+pipe.addEventListener("mouseenter", () => pipe.classList.add("paused"));
+pipe.addEventListener("mouseleave", () => pipe.classList.remove("paused"));
+stepsEl.addEventListener("keydown", e => {
+  const d = {ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1}[e.key];
+  if (!d) return;
+  e.preventDefault();
+  select((current + d + STEPS.length) % STEPS.length);
+  stepsEl.children[current].focus();
+  restart();
+});
+select(0); restart();
+
+// ---------- Guide ----------
+const DOCS = [
+  ["00-overview", "Overview", "The pieces and the path from a text to a probability"],
+  ["01-environment", "Environment", "Python, PyTorch with CUDA and laya, or Colab"],
+  ["02-data", "Data", "Input format, cleaning and synthetic cases"],
+  ["03-fine-tuning", "Fine-tuning", "Train Laya on diagnosis and management"],
+  ["04-inference", "Inference", "Load the checkpoint and predict in Python"],
+  ["05-scope-and-recalibration", "Scope & recalibration", "No probability for non-clinical text"],
+  ["06-server", "Service & server", "The analysis service and the FastAPI API"],
+  ["07-interface", "Interface", "How the single-page interface is built"],
+  ["08-run-locally", "Run locally", "On your computer and your private network"],
+  ["09-limitations", "Limitations", "What the model does not do; privacy, licenses"],
+];
+const docsEl = document.getElementById("docs");
+DOCS.forEach(([file, name, text], i) => {
+  const a = document.createElement("a");
+  a.className = `card doc reveal d${i % 4}`; a.href = `${REPO}docs/${file}.md`;
+  a.innerHTML = `<span class="num">${String(i).padStart(2, "0")}</span><b>${name} <span class="arrow">→</span></b><span>${text}</span>`;
+  docsEl.appendChild(a); io.observe(a);
+});
+</script>
+</body>
+</html>
