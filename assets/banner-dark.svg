@@ -5,10 +5,23 @@
     <linearGradient id="tr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3FA872" stop-opacity="0"/><stop offset="0.25" stop-color="#3FA872"/><stop offset="1" stop-color="#6FB3E0"/></linearGradient>
     <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#1B2A24"/><stop offset="1" stop-color="#1B2A24" stop-opacity="0"/></radialGradient>
   </defs>
+  <style>
+    /* The trace draws itself, the dot pulses, then it rests and repeats (6 s). Still for reduced motion. */
+    .trace { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 6s cubic-bezier(.65,0,.35,1) infinite; }
+    .dot { transform-box: fill-box; transform-origin: center; animation: beat 6s ease-in-out infinite; }
+    .halo { transform-box: fill-box; transform-origin: center; opacity: 0; animation: halo 6s ease-out infinite; }
+    @keyframes draw { 0% { stroke-dashoffset: 1; } 38%, 82% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -1; } }
+    @keyframes beat { 0%, 34% { transform: scale(0); } 42% { transform: scale(1.25); } 50%, 84% { transform: scale(1); } 100% { transform: scale(0); } }
+    @keyframes halo { 0%, 40% { opacity: 0; transform: scale(1); } 46% { opacity: .5; } 70%, 100% { opacity: 0; transform: scale(3.2); } }
+    @media (prefers-reduced-motion: reduce) {
+      .trace, .dot, .halo { animation: none; stroke-dashoffset: 0; transform: none; }
+    }
+  </style>
   <rect x="1" y="1" width="1278" height="338" rx="24" fill="url(#bg)" stroke="#2C3B35"/>
   <circle cx="1050" cy="165" r="210" fill="url(#glow)"/>
-  <path d="M890,170 L940,170 L958,132 L980,232 L1003,96 L1026,200 L1044,170 L1096,170 L1112,148 L1128,186 L1144,170 L1182,170" fill="none" stroke="url(#tr)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="1202" cy="170" r="9" fill="#6FB3E0"/>
+  <path class="trace" pathLength="1" d="M890,170 L940,170 L958,132 L980,232 L1003,96 L1026,200 L1044,170 L1096,170 L1112,148 L1128,186 L1144,170 L1182,170" fill="none" stroke="url(#tr)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="halo" cx="1202" cy="170" r="9" fill="none" stroke="#6FB3E0" stroke-width="2"/>
+  <circle class="dot" cx="1202" cy="170" r="9" fill="#6FB3E0"/>
   <g transform="translate(60,58) scale(1.5)">
     <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#lm)"/>
     <polyline points="11,36 21,36 26,24 32,46 37,29 41,36 47,36" fill="none" stroke="#FFFFFF" stroke-width="4.2"
