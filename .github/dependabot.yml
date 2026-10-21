@@ -1,0 +1,8 @@
+# Keeps the GitHub Actions used by the tests up to date. Python packages are pinned on purpose (requirements.txt):
+# they change only after re-running the notebook, so they are not updated automatically.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

@@ -1,0 +1,43 @@
+name: Bug report
+description: Something does not work as the guide says
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste real patient data** (clinical notes, MIMIC text), even de-identified. Use a synthetic or fictional case.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run cell ... of the notebook / python server.py
+        2. Type ...
+        3. See ...
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - Colab notebook
+        - Local server and interface
+        - Python code (layamed/)
+        - Synthetic generator
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Python, torch, laya and GPU. Paste error messages and logs here.
+      render: text
